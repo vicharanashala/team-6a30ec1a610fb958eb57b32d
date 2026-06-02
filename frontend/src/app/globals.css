@@ -27,3 +27,38 @@ body {
     transform: rotateY(180deg);
   }
 }
+
+@keyframes faq-cloud-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+.faq-cloud {
+  animation: faq-cloud-drift 5.5s ease-in-out infinite;
+}
+
+.campus-hotspot {
+  transition: opacity 180ms ease, filter 180ms ease;
+}
+
+.campus-hotspot:hover,
+.campus-hotspot:focus,
+.campus-hotspot.is-selected {
+  filter: drop-shadow(0 7px 5px rgba(66, 80, 67, 0.22));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-cloud {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

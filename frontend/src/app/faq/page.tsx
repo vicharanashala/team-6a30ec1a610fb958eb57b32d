@@ -1,937 +1,580 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { fetchFAQs, fetchCategories, searchFAQs } from '../../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { 
-  Search, 
-  Sparkles, 
-  AlertCircle, 
-  BookOpen, 
-  Copy,
-  Mail,
-  Award,
-  Laptop,
-  Briefcase,
-  FileText,
-  X,
-  Check,
-  Compass,
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowLeft,
   ArrowRight,
-  HelpCircle,
-  Hash,
-  Star,
-  Activity,
-  Flame,
-  ArrowUpRight,
+  Award,
+  BadgeCheck,
+  BookOpen,
+  BriefcaseBusiness,
+  CalendarDays,
+  Check,
   ChevronLeft,
-  ChevronDown
-} from 'lucide-react';
+  ChevronRight,
+  Compass,
+  Copy,
+  FileText,
+  GraduationCap,
+  HelpCircle,
+  Map,
+  MessageCircle,
+  MessagesSquare,
+  Monitor,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
+import {
+  CampusTopic,
+  FAQEntry,
+  campusTopics,
+  searchCampusFaqs,
+  topicForFaq,
+  topicsBySlug,
+} from "../../data/campus-faq";
+import { generateTLDR, type TLDR } from "../../lib/tldr";
 
-// Subtopic keywords dictionary to filter FAQs inside categories dynamically
-const SUBTOPICS_MAP: Record<string, { name: string; key: string }[]> = {
-  noc: [
-    { name: 'Dates & Deadlines', key: 'date' },
-    { name: 'HOD Signatures', key: 'sign' },
-    { name: 'Format & Template', key: 'format' },
-    { name: 'Upload Issues', key: 'upload' },
-    { name: 'Verification Path', key: 'verify' }
-  ],
-  internship: [
-    { name: 'Stipend Details', key: 'stipend' },
-    { name: 'Duration & Extensions', key: 'month' },
-    { name: 'Timeline / Start', key: 'start' },
-    { name: 'Accepting Offer', key: 'accept' },
-    { name: 'Work Prerequisites', key: 'laptop' }
-  ],
-  'offer-letter': [
-    { name: 'Opt-in/Accept', key: 'accept' },
-    { name: 'Signatures Required', key: 'sign' },
-    { name: 'Late Join Requests', key: 'join' },
-    { name: 'Mistakes / Edits', key: 'correct' }
-  ],
-  vibe: [
-    { name: 'Portal Credentials', key: 'login' },
-    { name: 'Git & Repo Sync', key: 'git' },
-    { name: 'Docker Environment', key: 'docker' },
-    { name: 'Weekly Tasks', key: 'week' }
-  ],
-  'technical-issues': [
-    { name: 'SSH Port Access', key: 'ssh' },
-    { name: 'Key Pair Setup', key: 'key' },
-    { name: 'Docker Failures', key: 'docker' },
-    { name: 'WSL / WSL2 Configuration', key: 'wsl' }
-  ],
-  certificates: [
-    { name: 'Criteria & Score', key: 'score' },
-    { name: 'Completion Badge', key: 'badge' },
-    { name: 'Letter of Rec', key: 'lor' },
-    { name: 'Courier & Delivery', key: 'address' }
-  ],
-  general: [
-    { name: 'Leave Policy', key: 'leave' },
-    { name: 'Office Hours', key: 'hour' },
-    { name: 'Contact Info', key: 'contact' },
-    { name: 'Yaksha Platform', key: 'yaksha' }
-  ]
+const PAGE_SIZE = 8;
+
+const iconMap = {
+  award: Award,
+  badge: BadgeCheck,
+  book: BookOpen,
+  briefcase: BriefcaseBusiness,
+  calendar: CalendarDays,
+  compass: Compass,
+  file: FileText,
+  graduation: GraduationCap,
+  messages: MessagesSquare,
+  monitor: Monitor,
+  shield: ShieldCheck,
+  sparkles: Sparkles,
+  users: Users,
 };
 
-export default function FAQPage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  // Data states
-  const [faqs, setFaqs] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<Record<string, 'helpful' | 'not-helpful'>>({});
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+const tldrCache: Record<string, TLDR | null> = {};
 
-  // Traversal & Hover States
-  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
-  const [selectedSubtopic, setSelectedSubtopic] = useState<string | null>(null);
-  const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
-  const [isStackHovered, setIsStackHovered] = useState(false);
-  
-  // Spotlight Search States
-  const [showSpotlight, setShowSpotlight] = useState(false);
-  const [spotlightQuery, setSpotlightQuery] = useState('');
-  const [spotlightResults, setSpotlightResults] = useState<any[]>([]);
-  const [focusedIndex, setFocusedIndex] = useState(0);
+function getTLDR(faq: FAQEntry): TLDR | null {
+  if (!(faq.id in tldrCache)) {
+    tldrCache[faq.id] = generateTLDR(faq);
+  }
+  return tldrCache[faq.id];
+}
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [faqData, catData] = await Promise.all([
-        fetchFAQs(),
-        fetchCategories()
-      ]);
-      setFaqs(faqData);
-      setCategories(catData);
-    } catch (e) {
-      console.error('Failed to load FAQs:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+const cloudPositions = [
+  "md:left-[2%] md:top-[8%]",
+  "md:left-[34%] md:top-[2%]",
+  "md:right-[1%] md:top-[12%]",
+  "md:left-[10%] md:top-[42%]",
+  "md:right-[8%] md:top-[43%]",
+  "md:left-[2%] md:bottom-[7%]",
+  "md:left-[37%] md:bottom-[2%]",
+  "md:right-[1%] md:bottom-[9%]",
+];
 
-  useEffect(() => {
-    loadData();
-  }, []);
+function iconFor(topic: CampusTopic) {
+  return iconMap[topic.icon as keyof typeof iconMap] ?? HelpCircle;
+}
 
-  // Keyboard shortcut Ctrl+K to toggle Spotlight Search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowSpotlight(prev => !prev);
-        setSpotlightQuery('');
-        setFocusedIndex(0);
-      }
-      if (e.key === 'Escape') {
-        setShowSpotlight(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+function SidebarNav({
+  selectedTopic,
+  onChoose,
+}: {
+  selectedTopic?: CampusTopic;
+  onChoose: (topic: CampusTopic) => void;
+}) {
+  return (
+    <nav className="flex h-full flex-col py-5">
+      <div className="mb-3 border-b border-[#ebe5d9] px-4 pb-3">
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#66806c]">Campus Guide</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2">
+        {campusTopics.map((topic) => {
+          const Icon = iconFor(topic);
+          const isActive = selectedTopic?.slug === topic.slug;
+          return (
+            <button
+              key={topic.slug}
+              onClick={() => onChoose(topic)}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition
+                ${isActive
+                  ? "bg-[#f0ebe0] font-extrabold text-[#263b34]"
+                  : "font-semibold text-[#5a6b60] hover:bg-[#f5f1e8] hover:text-[#263b34]"
+                }`}
+              style={isActive ? { borderLeft: `3px solid ${topic.color}`, paddingLeft: "9px" } : {}}
+            >
+              <span className="shrink-0" style={{ color: topic.color }}>
+                <Icon size={16} strokeWidth={2.5} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-xs">{topic.label}</span>
+              <span className="shrink-0 text-[10px] font-bold text-[#8f9d8f]">{topic.faqs.length}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
 
-  // Spotlight Search filtering
-  useEffect(() => {
-    if (!spotlightQuery.trim()) {
-      setSpotlightResults([]);
-      return;
-    }
-    const query = spotlightQuery.toLowerCase();
-    const matches = faqs.filter(faq => 
-      faq.question.toLowerCase().includes(query) || 
-      faq.answer.toLowerCase().includes(query)
-    ).slice(0, 5);
-    setSpotlightResults(matches);
-    setFocusedIndex(0);
-  }, [spotlightQuery, faqs]);
+function TLDRBlock({ tldr }: { tldr: TLDR }) {
+  return (
+    <div className="mb-5 overflow-hidden rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-amber-50/60">
+      <div className="border-b border-amber-200/60 bg-amber-100/50 px-5 py-3">
+        <span className="text-sm font-black uppercase tracking-[0.2em] text-amber-800">TL;DR</span>
+      </div>
+      <div className="space-y-3.5 px-5 py-4">
+        <p className="text-base font-bold leading-snug text-amber-900">{tldr.headline}</p>
+        {tldr.pairs.length > 0 && (
+          <div className="space-y-2">
+            {tldr.pairs.map((pair, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="mt-0.5 shrink-0 text-base">{pair.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="mr-2 text-[11px] font-extrabold uppercase tracking-wider text-amber-700">{pair.label}</span>
+                  <span className="text-sm font-medium leading-relaxed text-amber-900/85">{pair.value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200/70 bg-white/70 px-4 py-3">
+          <span className="mt-0.5 shrink-0 text-base">➡️</span>
+          <span className="text-sm font-medium leading-relaxed text-amber-900/85">{tldr.action}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  // Handle Spotlight select
-  const handleSpotlightSelect = (faq: any) => {
-    const cat = categories.find(c => c.id === faq.category_id);
-    setSelectedCategory(cat || categories[0]);
-    setExpandedFaqId(faq.id);
-    setSelectedSubtopic(null);
-    setShowSpotlight(false);
-    
-    // Smooth scroll to timeline
-    setTimeout(() => {
-      document.getElementById('faq-viewer-timeline')?.scrollIntoView({ behavior: 'smooth' });
-    }, 300);
-  };
-
-  // Particles network canvas implementation (Light Mode Optimized)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    let animationFrameId: number;
-    const particles: any[] = [];
-
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    const mouse = { x: -1000, y: -1000, radius: 160 };
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    class Particle {
-      x: number; y: number;
-      vx: number; vy: number;
-      size: number;
-      alpha: number;
-      color: string;
-      constructor() {
-        this.x = Math.random() * width;
-        this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.35;
-        this.vy = (Math.random() - 0.5) * 0.35;
-        this.size = Math.random() * 2 + 0.8;
-        this.alpha = Math.random() * 0.25 + 0.15;
-        this.color = '99, 102, 241'; // Indigo 500
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-
-        if (this.x < 0) this.x = width;
-        if (this.x > width) this.x = 0;
-        if (this.y < 0) this.y = height;
-        if (this.y > height) this.y = 0;
-
-        // Magnet attraction
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < mouse.radius) {
-          const force = (mouse.radius - dist) / mouse.radius;
-          this.x -= (dx / dist) * force * 1.0;
-          this.y -= (dy / dist) * force * 1.0;
-        }
-      }
-      draw() {
-        if (!ctx) return;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
-        ctx.fill();
-      }
-    }
-
-    for (let i = 0; i < 45; i++) {
-      particles.push(new Particle());
-    }
-
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-      
-      // Draw delicate web lines between nearby particles
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(99, 102, 241, ${0.08 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-      animationFrameId = requestAnimationFrame(render);
-    };
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
-  const handleFeedback = (faqId: string, type: 'helpful' | 'not-helpful', e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFeedback(prev => ({ ...prev, [faqId]: type }));
-  };
-
-  const handleCopy = (text: string, id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  const getCategoryIcon = (slug: string) => {
-    switch (slug) {
-      case 'noc': return FileText;
-      case 'offer-letter': return Mail;
-      case 'certificates': return Award;
-      case 'vibe': return Sparkles;
-      case 'technical-issues': return Laptop;
-      case 'internship': return Briefcase;
-      default: return BookOpen;
-    }
-  };
-
-  // Light mode category styling mapping
-  const getCategoryColor = (slug: string) => {
-    switch (slug) {
-      case 'noc': return 'from-rose-50/80 to-white text-rose-600 border-rose-200/80 shadow-rose-100/10';
-      case 'offer-letter': return 'from-amber-50/80 to-white text-amber-600 border-amber-200/80 shadow-amber-100/10';
-      case 'certificates': return 'from-emerald-50/80 to-white text-emerald-600 border-emerald-200/80 shadow-emerald-100/10';
-      case 'vibe': return 'from-indigo-50/80 to-white text-indigo-650 border-indigo-200/80 shadow-indigo-100/10';
-      case 'technical-issues': return 'from-purple-50/80 to-white text-purple-650 border-purple-200/80 shadow-purple-100/10';
-      case 'internship': return 'from-teal-50/80 to-white text-teal-600 border-teal-200/80 shadow-teal-100/10';
-      default: return 'from-slate-50 to-white text-slate-600 border-slate-200/80 shadow-slate-100/10';
-    }
-  };
-
-  const getCategoryThemeColors = (slug: string) => {
-    switch (slug) {
-      case 'noc': return { bg: 'bg-rose-50 text-rose-600 border-rose-100', dot: 'bg-rose-500' };
-      case 'offer-letter': return { bg: 'bg-amber-50 text-amber-600 border-amber-100', dot: 'bg-amber-500' };
-      case 'certificates': return { bg: 'bg-emerald-50 text-emerald-600 border-emerald-100', dot: 'bg-emerald-500' };
-      case 'vibe': return { bg: 'bg-indigo-50 text-indigo-600 border-indigo-100', dot: 'bg-indigo-500' };
-      case 'technical-issues': return { bg: 'bg-purple-50 text-purple-600 border-purple-100', dot: 'bg-purple-500' };
-      case 'internship': return { bg: 'bg-teal-50 text-teal-600 border-teal-100', dot: 'bg-teal-500' };
-      default: return { bg: 'bg-slate-50 text-slate-600 border-slate-200', dot: 'bg-slate-500' };
-    }
-  };
-
-  // Subtopic list for selected category
-  const activeSubtopics = useMemo(() => {
-    if (!selectedCategory) return [];
-    return SUBTOPICS_MAP[selectedCategory.slug] || [];
-  }, [selectedCategory]);
-
-  // Filtered FAQs listing under category & selected subtopic
-  const visibleFAQs = useMemo(() => {
-    if (!selectedCategory) return [];
-    return faqs.filter(faq => {
-      const matchCat = faq.category_id === selectedCategory.id;
-      if (!matchCat) return false;
-      if (!selectedSubtopic) return true;
-      
-      const query = selectedSubtopic.toLowerCase();
-      return faq.question.toLowerCase().includes(query) || 
-             faq.answer.toLowerCase().includes(query);
-    });
-  }, [faqs, selectedCategory, selectedSubtopic]);
-
-  // Trending FAQs (e.g. ones with high priority)
-  const trendingFAQs = useMemo(() => {
-    return faqs.slice(0, 3);
-  }, [faqs]);
+function RichAnswer({ text }: { text: string }) {
+  const decoded = text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
 
   return (
-    <div className="min-h-screen bg-slate-50/50 text-slate-800 selection:bg-indigo-500/10 selection:text-indigo-700 overflow-x-hidden relative font-sans select-none -mx-4 -my-8 px-4 py-8">
-      
-      {/* Dynamic light particles background layer */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-80" />
-      
-      {/* Soft background light glows */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(99,102,241,0.06),transparent_50%)] pointer-events-none z-0" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_40%,rgba(168,85,247,0.03),transparent_40%)] pointer-events-none z-0" />
+    <>
+      {decoded.split(/(\*\*.*?\*\*)/g).map((part, index) =>
+        part.startsWith("**") && part.endsWith("**")
+          ? <strong key={index} className="font-extrabold text-slate-700">{part.slice(2, -2)}</strong>
+          : part
+      )}
+    </>
+  );
+}
 
-      {/* FLOATING HEADER CONTROLS */}
-      <div className="max-w-5xl mx-auto flex items-center justify-between mb-8 relative z-20">
-        <div className="flex items-center space-x-2">
-          <Compass className="h-5 w-5 text-indigo-650 animate-spin-slow" />
-          <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-700 bg-indigo-500/5 px-2.5 py-1 rounded border border-indigo-500/10">
-            Yaksha System
-          </span>
-        </div>
-
-        {/* Shortcut activation button */}
-        <button
-          onClick={() => { setShowSpotlight(true); setSpotlightQuery(''); }}
-          className="bg-white hover:bg-slate-50 border border-slate-200/80 shadow-xs px-3.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-700 flex items-center space-x-2 transition-all cursor-pointer"
-        >
-          <span>Spotlight Search</span>
-          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[8px] border border-slate-200">Ctrl + K</span>
-        </button>
-      </div>
-
-      {/* 1. HERO SECTION */}
-      <div className="max-w-5xl mx-auto text-center py-10 space-y-4 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="space-y-2"
-        >
-          <span className="text-[10px] uppercase tracking-widest text-indigo-600 font-bold block">
-            CINEMATIC KNOWLEDGE ENGINE
-          </span>
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 leading-none">
-            Ask Yaksha Anything.
-          </h1>
-          <p className="text-slate-500 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed font-medium">
-            Reinventing FAQ exploration. Hover over the tilted deck to expand categories, click to zoom into details, or hit Spotlight.
-          </p>
-        </motion.div>
-
-        {/* Large Search Trigger */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="max-w-xl mx-auto pt-2"
-        >
-          <div 
-            onClick={() => { setShowSpotlight(true); setSpotlightQuery(''); }}
-            className="w-full bg-white hover:bg-slate-50 border border-slate-200 shadow-md pl-5 pr-4 py-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all group"
-          >
-            <div className="flex items-center space-x-3 text-slate-400">
-              <Search className="h-4.5 w-4.5 group-hover:text-indigo-650 transition-colors" />
-              <span className="text-xs sm:text-sm font-semibold text-slate-450">Search topics, subtopics or guidelines...</span>
-            </div>
-            <div className="flex items-center space-x-1.5 text-slate-400 text-[10px] font-bold">
-              <span className="bg-slate-100 border border-slate-200 px-2 py-1 rounded-md">Ctrl</span>
-              <span>+</span>
-              <span className="bg-slate-100 border border-slate-200 px-2 py-1 rounded-md">K</span>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* 2. DYNAMIC EXPLODED 3D STACK OR EXPANDED CATEGORY UNIVERSE */}
-      <div className="max-w-4xl mx-auto py-8 relative z-10">
-        <AnimatePresence mode="wait">
-          {!selectedCategory ? (
-            
-            /* 3D TILTED STACK VIEW (Light themed glass) */
-            <motion.div
-              key="3d-stack-view"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.6 }}
-              className="relative w-full max-w-xl min-h-[460px] mx-auto flex items-center justify-center select-none cursor-pointer"
-              onMouseEnter={() => setIsStackHovered(true)}
-              onMouseLeave={() => setIsStackHovered(false)}
-            >
-              <div 
-                className="relative w-full h-[400px] flex items-center justify-center"
-                style={{
-                  perspective: '1000px',
-                  transformStyle: 'preserve-3d',
-                }}
+function CampusIllustration({
+  selectedTopic,
+  onSelect,
+  compact = false,
+}: {
+  selectedTopic?: CampusTopic;
+  onSelect?: (topic: CampusTopic) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`relative overflow-hidden rounded-[2rem] border border-[#d9dccd] bg-[#f4f2e6] shadow-[0_24px_70px_rgba(75,83,62,0.12)] ${compact ? "h-44" : "h-[620px]"}`}>
+      <Image
+        src="/iit-ropar-faq-map.png"
+        alt="Illustrated map of IIT Ropar campus knowledge locations"
+        fill
+        unoptimized
+        priority={!compact}
+        sizes={compact ? "100vw" : "(min-width: 768px) 1152px, 100vw"}
+        className="h-full w-full object-cover"
+      />
+      {!compact && onSelect && (
+        <div className="absolute inset-0">
+          {campusTopics.map((topic) => {
+            const Icon = iconFor(topic);
+            const isSelected = selectedTopic?.slug === topic.slug;
+            return (
+              <button
+                key={topic.slug}
+                aria-label={`${topic.label}, ${topic.faqs.length} questions`}
+                onClick={() => onSelect(topic)}
+                className={`campus-hotspot group absolute flex w-40 flex-col items-center outline-none ${isSelected ? "is-selected" : ""}`}
+                style={{ left: `${topic.location.x}%`, top: `${topic.location.y}%`, transform: "translate(-50%, -50%)" }}
               >
-                {categories.map((cat, idx) => {
-                  const IconComponent = getCategoryIcon(cat.slug);
-                  const themeClass = getCategoryColor(cat.slug);
-                  const subtopics = SUBTOPICS_MAP[cat.slug] || [];
-
-                  // Compute dynamic staggered 3D translation styles based on hover state
-                  const yOffset = isStackHovered ? (idx - 3) * 64 : -idx * 15;
-                  const zOffset = isStackHovered ? -idx * 8 : -idx * 25;
-                  const scale = isStackHovered ? 1.02 : 1 - idx * 0.045;
-                  const rotateX = isStackHovered ? 12 : 20;
-                  const rotateY = isStackHovered ? -8 : -15;
-                  const rotateZ = isStackHovered ? 2 : 4;
-
-                  return (
-                    <motion.div
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setSelectedSubtopic(null);
-                        setExpandedFaqId(null);
-                      }}
-                      animate={{
-                        y: yOffset,
-                        z: zOffset,
-                        scale: scale,
-                        rotateX: rotateX,
-                        rotateY: rotateY,
-                        rotateZ: rotateZ,
-                        opacity: 1
-                      }}
-                      transition={{
-                        type: 'spring',
-                        stiffness: 110,
-                        damping: 18,
-                        mass: 0.9
-                      }}
-                      style={{
-                        transformStyle: 'preserve-3d',
-                      }}
-                      className={`absolute z-[${10 - idx}] w-full max-w-md bg-gradient-to-br ${themeClass} border rounded-3xl p-5 shadow-lg flex items-center justify-between transition-all group duration-300`}
-                    >
-                      {/* Exploded stacked card elements */}
-                      <div className="flex items-center space-x-4">
-                        <div className="p-3 rounded-2xl bg-white/70 border border-slate-200/40 group-hover:scale-110 transition-transform">
-                          <IconComponent className="h-5.5 w-5.5" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
-                            {cat.name}
-                          </h3>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                            Category Layer {idx + 1}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right side floating tags shown on hover spread */}
-                      <div className="hidden sm:flex flex-wrap gap-1.5 max-w-[180px] justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {subtopics.slice(0, 2).map((sub, sIdx) => (
-                          <span key={sIdx} className="text-[8px] font-extrabold bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg text-slate-500">
-                            {sub.name}
-                          </span>
-                        ))}
-                        {subtopics.length > 2 && (
-                          <span className="text-[8px] font-extrabold bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-lg text-indigo-650">
-                            +{subtopics.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          ) : (
-            
-            /* 3. LAYERED CATEGORY EXPANSION VIEW (Flat interactive staging panel in light mode) */
-            <motion.div
-              key="category-expansion"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="bg-white border border-slate-200/80 rounded-[36px] p-6 sm:p-8 relative overflow-hidden space-y-8 shadow-md"
-            >
-              {/* Back navigation */}
-              <div className="flex items-center justify-between border-b border-slate-150 pb-4">
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center space-x-2 transition-colors cursor-pointer select-none"
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-full border-[3px] bg-[#fffdf8] shadow-sm transition group-hover:scale-110 group-focus:scale-110"
+                  style={{ borderColor: topic.color, color: topic.color }}
                 >
-                  <ChevronLeft className="h-4.5 w-4.5" />
-                  <span>Return to Deck</span>
-                </button>
-                <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <span>Exploding layers details</span>
-                </div>
-              </div>
-
-              {/* Big Focused Zoomed category header */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-                <div className="flex items-center space-x-4">
-                  <div className={`p-4 rounded-3xl bg-gradient-to-br ${getCategoryColor(selectedCategory.slug)} border shadow-md flex-shrink-0`}>
-                    {React.createElement(getCategoryIcon(selectedCategory.slug), { className: 'h-6 w-6' })}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">
-                      {selectedCategory.name}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed font-medium">
-                      Select subtopic chips to explore visual storytelling guidelines.
-                    </p>
-                  </div>
-                </div>
-                
-                <span className="text-[9px] uppercase font-extrabold tracking-widest px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-indigo-650">
-                  {visibleFAQs.length} Guidelines Matching
+                  <Icon size={19} strokeWidth={2.5} />
                 </span>
-              </div>
-
-              {/* Dynamic neural chip subtopics list */}
-              <div className="space-y-3.5 pt-2">
-                <span className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest pl-0.5 block">
-                  Filter by Subtopic
+                <span className="mt-1 w-full rounded-xl border border-[#ded8c9] bg-[#fffdf9]/95 px-2 py-1 text-center shadow-sm backdrop-blur-sm">
+                  <span className="block truncate text-[11px] font-extrabold leading-4 text-[#31413a]">{topic.label}</span>
+                  <span className="block text-[10px] font-semibold leading-3 text-[#748078]">{topic.faqs.length} questions</span>
                 </span>
-                <div className="flex flex-wrap gap-2.5">
-                  <button
-                    onClick={() => setSelectedSubtopic(null)}
-                    className={`px-4.5 py-2.5 rounded-2xl text-xs font-bold transition-all border cursor-pointer select-none ${
-                      selectedSubtopic === null
-                        ? 'bg-slate-900 border-slate-900 text-white shadow-md shadow-slate-900/10'
-                        : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                    }`}
-                  >
-                    Show All
-                  </button>
-                  {activeSubtopics.map((sub: any) => {
-                    const isSelected = selectedSubtopic === sub.key;
-                    return (
-                      <button
-                        key={sub.key}
-                        onClick={() => setSelectedSubtopic(isSelected ? null : sub.key)}
-                        className={`px-4.5 py-2.5 rounded-2xl text-xs font-bold transition-all border cursor-pointer select-none flex items-center space-x-1.5 ${
-                          isSelected
-                            ? 'bg-slate-900 border-slate-900 text-white shadow-md shadow-slate-900/10 scale-102'
-                            : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                        }`}
-                      >
-                        <Hash className="h-3 w-3 opacity-60" />
-                        <span>{sub.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* OVERHAULED FAQ REPRESENTATION: CINEMATIC STORYBOARD GRID */}
-              <div id="faq-viewer-timeline" className="pt-6 border-t border-slate-150">
-                <AnimatePresence mode="popLayout">
-                  {visibleFAQs.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {visibleFAQs.map((faq, idx) => {
-                        const isExpanded = expandedFaqId === faq.id;
-                        const hasFeedback = feedback[faq.id];
-                        const isCopied = copiedId === faq.id;
-                        const theme = getCategoryThemeColors(selectedCategory.slug);
-
-                        return (
-                          <motion.div
-                            key={faq.id}
-                            layout="position"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.35, delay: idx * 0.04 }}
-                            onClick={() => setExpandedFaqId(isExpanded ? null : faq.id)}
-                            className={`bg-white border-2 rounded-[28px] p-6 text-left transition-all duration-300 flex flex-col justify-between cursor-pointer relative overflow-hidden group ${
-                              isExpanded 
-                                ? 'border-indigo-400 shadow-md ring-2 ring-indigo-500/5 col-span-2' 
-                                : 'border-slate-200/80 hover:border-indigo-200 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="space-y-4">
-                              
-                              {/* Pill category tag */}
-                              <div className="flex items-center justify-between">
-                                <span className={`text-[8.5px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full border ${theme.bg}`}>
-                                  GUIDELINE {faq.original_id || 'FAQ'}
-                                </span>
-                                
-                                <div className="flex items-center space-x-1.5 text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">
-                                  <span className={`h-2 w-2 rounded-full ${theme.dot} ${isExpanded ? 'animate-ping' : ''}`} />
-                                  <span>{isExpanded ? 'Active Guide' : 'Read Guide'}</span>
-                                </div>
-                              </div>
-
-                              {/* Question Heading */}
-                              <h4 className="text-slate-900 font-extrabold text-sm sm:text-base leading-snug group-hover:text-indigo-650 transition-colors">
-                                {faq.question}
-                              </h4>
-
-                              {/* Answer Text with preview logic */}
-                              <div className="relative">
-                                <p className={`text-slate-600 font-medium text-xs sm:text-sm leading-relaxed whitespace-pre-line select-text ${
-                                  !isExpanded ? 'line-clamp-3' : ''
-                                }`}>
-                                  {faq.answer}
-                                </p>
-                                
-                                {/* Truncation fade when not expanded */}
-                                {!isExpanded && faq.answer.length > 180 && (
-                                  <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Utility actions inside the card, displayed or expanded */}
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="mt-6 pt-4 border-t border-slate-150 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[9px] text-slate-450 font-bold uppercase tracking-wider select-none"
-                                >
-                                  {/* Feedback upvote */}
-                                  <div className="flex items-center space-x-2">
-                                    <span>Was this document helpful?</span>
-                                    <button
-                                      onClick={(e) => handleFeedback(faq.id, 'helpful', e)}
-                                      className={`px-3 py-1 rounded-lg border transition-colors cursor-pointer select-none ${
-                                        hasFeedback === 'helpful'
-                                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500'
-                                      }`}
-                                    >
-                                      Yes
-                                    </button>
-                                    <button
-                                      onClick={(e) => handleFeedback(faq.id, 'not-helpful', e)}
-                                      className={`px-3 py-1 rounded-lg border transition-colors cursor-pointer select-none ${
-                                        hasFeedback === 'not-helpful'
-                                          ? 'bg-rose-50 text-rose-600 border-rose-200'
-                                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500'
-                                      }`}
-                                    >
-                                      No
-                                    </button>
-                                  </div>
-
-                                  {/* Link Copy button */}
-                                  <button
-                                    onClick={(e) => handleCopy(faq.answer, faq.id, e)}
-                                    className="flex items-center space-x-1.5 text-slate-500 hover:text-indigo-650 transition-colors cursor-pointer self-start sm:self-center"
-                                  >
-                                    {isCopied ? (
-                                      <>
-                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                        <span className="text-emerald-600 font-extrabold">Copied</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="h-3.5 w-3.5" />
-                                        <span>Copy Link</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-
-                            {/* Click expand prompt shown at bottom of closed cards */}
-                            {!isExpanded && (
-                              <div className="mt-4 flex items-center space-x-1.5 text-[9px] font-bold text-slate-400 group-hover:text-indigo-600 transition-colors">
-                                <span>View document</span>
-                                <ArrowUpRight className="h-3.5 w-3.5" />
-                              </div>
-                            )}
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="border border-dashed border-slate-200 rounded-[28px] p-14 text-center bg-white shadow-xs">
-                      <AlertCircle className="h-7 w-7 text-slate-400 mx-auto mb-2 animate-pulse" />
-                      <h5 className="text-xs font-bold text-slate-700">No guidelines matching</h5>
-                      <p className="text-[10px] text-slate-450 mt-1 max-w-[220px] mx-auto leading-relaxed">
-                        We couldn't find matches under this subtopic keyword. Try toggling other chips.
-                      </p>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* 4. APPLE-LIKE STORYTELLING SCROLL SECTIONS */}
-      <div className="max-w-4xl mx-auto py-16 space-y-24 relative z-10 border-t border-slate-200/60 mt-8">
-        
-        {/* SECTION 1: TRENDING TOPICS */}
-        <div className="space-y-8">
-          <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-indigo-650 uppercase tracking-widest pl-0.5 flex items-center space-x-1">
-              <Flame className="h-3.5 w-3.5 animate-pulse text-amber-500" />
-              <span>Trending Queries</span>
-            </span>
-            <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Highly Searched Guidelines
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm">
-              Quick access to rules and documents that other interns are checking right now.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {trendingFAQs.map((faq) => {
-              const cat = categories.find(c => c.id === faq.category_id);
-              const theme = getCategoryThemeColors(cat?.slug || 'general');
-
-              return (
-                <div 
-                  key={faq.id}
-                  onClick={() => {
-                    setSelectedCategory(cat || categories[0]);
-                    setExpandedFaqId(faq.id);
-                    setSelectedSubtopic(null);
-                    document.getElementById('faq-viewer-timeline')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-white border border-slate-200/80 hover:border-indigo-200 p-5 rounded-2xl space-y-4 hover:bg-slate-50/20 transition-all cursor-pointer group shadow-xs flex flex-col justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">
-                      <span>INDEXED FAQ</span>
-                      <Star className="h-3 w-3 text-amber-500 fill-amber-500/10" />
-                    </div>
-                    <h4 className="font-extrabold text-slate-800 text-xs leading-snug group-hover:text-indigo-650 transition-colors line-clamp-3">
-                      {faq.question}
-                    </h4>
-                  </div>
-                  
-                  <div className="flex items-center space-x-1 text-[10px] font-bold text-indigo-600 uppercase tracking-wider pt-2 group-hover:translate-x-1.5 transition-transform duration-350">
-                    <span>Explore</span>
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+              </button>
+            );
+          })}
         </div>
-
-        {/* SECTION 2: AI SMART DISCOVERY */}
-        <div className="bg-gradient-to-tr from-indigo-50/50 via-white to-purple-50/50 border border-slate-200 p-6 sm:p-8 rounded-[32px] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
-          <div className="space-y-2 max-w-lg">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-750 bg-indigo-555/5 px-2.5 py-1 rounded border border-indigo-500/10 inline-block">
-              AI Smart discovery
-            </span>
-            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-              Can't locate what you need in the stack?
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              Yaksha integrates vector semantic search with official guidelines to answer custom, open-ended doubts. Open the Solver screen to ask directly.
-            </p>
-          </div>
-
-          <Link
-            href="/"
-            className="flex items-center space-x-2 px-5 py-3 rounded-2xl bg-slate-900 text-white font-extrabold text-xs tracking-wider uppercase hover:bg-slate-800 shadow-md transition-all select-none self-start sm:self-center"
-          >
-            <span>Ask Yaksha Bot</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
+      )}
+      <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#647468] shadow-sm backdrop-blur">
+        IIT Ropar Knowledge Map
       </div>
+    </div>
+  );
+}
 
-      {/* 6. APPLE SPOTLIGHT SEARCH DIALOG MODAL (Light Mode) */}
-      <AnimatePresence>
-        {showSpotlight && (
+function SearchDialog({
+  open,
+  onClose,
+  onChoose,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onChoose: (faq: FAQEntry) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const results = useMemo(() => searchCampusFaqs(query), [query]);
+
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      window.setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-[#26332d]/25 px-4 pt-20 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 bg-slate-900/10 backdrop-blur-md"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search campus FAQs"
+            className="w-full max-w-2xl overflow-hidden rounded-[1.75rem] border border-[#e2ddd0] bg-[#fffdf8] shadow-2xl"
+            initial={{ opacity: 0, y: -18, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
           >
-            {/* Backdrop click closer */}
-            <div 
-              onClick={() => setShowSpotlight(false)}
-              className="absolute inset-0 z-0"
-            />
-            
-            <motion.div
-              initial={{ scale: 0.96, y: -10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="relative z-10 w-full max-w-xl bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden flex flex-col"
-            >
-              {/* Modal Search field */}
-              <div className="p-4 border-b border-slate-100 flex items-center space-x-3.5 bg-slate-50/50">
-                <Search className="h-5 w-5 text-indigo-650 flex-shrink-0 animate-pulse" />
-                <input
-                  type="text"
-                  value={spotlightQuery}
-                  onChange={(e) => setSpotlightQuery(e.target.value)}
-                  placeholder="Ask any doubt or type keyword (e.g. NOC signatures)..."
-                  className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 font-semibold text-sm focus:outline-none"
-                  autoFocus
-                />
-                <button 
-                  onClick={() => setShowSpotlight(false)}
-                  className="h-6 w-6 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
+            <div className="flex items-center gap-3 border-b border-[#ebe6d9] px-5 py-4">
+              <Search className="h-5 w-5 text-[#6d806e]" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search NOC, ViBe, certificates, campus locations..."
+                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
+              />
+              <button onClick={onClose} className="rounded-full p-2 text-slate-400 transition hover:bg-[#f3eee3] hover:text-slate-700" aria-label="Close search">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[430px] overflow-y-auto p-3">
+              {!query.trim() && <p className="px-3 py-8 text-center text-sm text-slate-500">Search across all 126 verified questions and 13 campus locations.</p>}
+              {query.trim() && !results.length && <p className="px-3 py-8 text-center text-sm text-slate-500">No matching FAQ found. Try a shorter keyword.</p>}
+              {results.map(({ faq, topic }) => topic && (
+                <button
+                  key={faq.id}
+                  onClick={() => onChoose(faq)}
+                  className="group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[#f6f2e8] focus:bg-[#f6f2e8] focus:outline-none"
                 >
-                  <X className="h-4 w-4" />
+                  <span className="mt-0.5 rounded-xl p-2" style={{ backgroundColor: topic.softColor, color: topic.color }}>
+                    <Map className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-800">{faq.question}</span>
+                    <span className="mt-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{topic.label} · {faq.id}</span>
+                  </span>
+                  <ArrowRight className="mt-2 h-4 w-4 text-slate-300 transition group-hover:translate-x-1 group-hover:text-slate-600" />
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function FAQExperience() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const topicParam = searchParams.get("topic");
+  const faqParam = searchParams.get("faq");
+  const initialFaq = faqParam;
+  const faqFromQuery = initialFaq ? campusTopics.flatMap((topic) => topic.faqs).find((faq) => faq.id === initialFaq) : undefined;
+  const initialTopic = topicsBySlug.get(searchParams.get("topic") ?? "") ?? (faqFromQuery ? topicForFaq(faqFromQuery) : undefined);
+  const [selectedTopic, setSelectedTopic] = useState<CampusTopic | undefined>(initialTopic);
+  const [selectedFaq, setSelectedFaq] = useState<FAQEntry | undefined>(faqFromQuery);
+  const [page, setPage] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const sidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const answerRef = useRef<HTMLDivElement>(null);
+
+  function showSidebar() {
+    if (sidebarTimerRef.current) clearTimeout(sidebarTimerRef.current);
+    setSidebarVisible(true);
+  }
+
+  function hideSidebar() {
+    sidebarTimerRef.current = setTimeout(() => setSidebarVisible(false), 250);
+  }
+
+  const totalPages = selectedTopic ? Math.ceil(selectedTopic.faqs.length / PAGE_SIZE) : 0;
+  const visibleFaqs = selectedTopic?.faqs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE) ?? [];
+
+  const setUrl = useCallback((topic?: CampusTopic, faq?: FAQEntry) => {
+    const params = new URLSearchParams();
+    if (topic) params.set("topic", topic.slug);
+    if (faq) params.set("faq", faq.id);
+    router.replace(`${pathname}${params.size ? `?${params}` : ""}`, { scroll: false });
+  }, [pathname, router]);
+
+  function chooseTopic(topic: CampusTopic) {
+    setSelectedTopic(topic);
+    setSelectedFaq(undefined);
+    setPage(0);
+    setUrl(topic);
+  }
+
+  function chooseFaq(faq: FAQEntry) {
+    const topic = topicForFaq(faq);
+    if (!topic) return;
+    const faqPage = Math.floor(topic.faqs.findIndex((item) => item.id === faq.id) / PAGE_SIZE);
+    setSelectedTopic(topic);
+    setPage(Math.max(0, faqPage));
+    setSelectedFaq(faq);
+    setSearchOpen(false);
+    setUrl(topic, faq);
+  }
+
+  function closeFaq() {
+    setSelectedFaq(undefined);
+    setCopied(false);
+    setUrl(selectedTopic);
+  }
+
+  function returnToMap() {
+    setSelectedTopic(undefined);
+    setSelectedFaq(undefined);
+    setPage(0);
+    setUrl();
+  }
+
+  async function copyLink() {
+    const link = window.location.href;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = link;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      textArea.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  useEffect(() => {
+    const faq = faqParam ? campusTopics.flatMap((topic) => topic.faqs).find((item) => item.id === faqParam) : undefined;
+    const topic = topicsBySlug.get(topicParam ?? "") ?? (faq ? topicForFaq(faq) : undefined);
+    setSelectedTopic(topic);
+    setSelectedFaq(faq);
+    setCopied(false);
+    setPage(topic && faq ? Math.max(0, Math.floor(topic.faqs.findIndex((item) => item.id === faq.id) / PAGE_SIZE)) : 0);
+  }, [faqParam, topicParam]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+      if (event.key === "Escape") {
+        if (searchOpen) setSearchOpen(false);
+        else if (selectedFaq) {
+          setSelectedFaq(undefined);
+          setCopied(false);
+          setUrl(selectedTopic);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [searchOpen, selectedFaq, selectedTopic, setUrl]);
+
+  useEffect(() => {
+    if (selectedFaq) window.setTimeout(() => answerRef.current?.focus(), 80);
+  }, [selectedFaq]);
+
+  return (
+    <div className="-mx-4 -my-8 min-h-screen overflow-x-hidden bg-[#faf8f2] px-4 py-10 text-slate-800">
+      <section className="mx-auto max-w-6xl">
+        <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#dfe2d3] bg-white/80 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#66806c]">
+              <Compass className="h-3.5 w-3.5" /> Vicharanashala Student Guide
+            </span>
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-[#263b34] sm:text-6xl">Explore your internship campus.</h1>
+            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-slate-500 sm:text-base">
+              Every stop opens a verified collection of answers. Pick a place on the IIT Ropar knowledge map or search across all 126 questions.
+            </p>
+          </div>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[#e1dccf] bg-white px-4 py-3.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:w-[340px]"
+          >
+            <span className="flex items-center gap-3 text-sm font-semibold text-slate-500"><Search className="h-4 w-4 text-[#66806c]" />Search the map</span>
+            <span className="rounded-md bg-[#f4f0e7] px-2 py-1 text-[10px] font-bold text-slate-400">Ctrl K</span>
+          </button>
+        </div>
+
+        {!selectedTopic ? (
+          <>
+            <div className="hidden md:block"><CampusIllustration onSelect={chooseTopic} /></div>
+            <div className="md:hidden"><CampusIllustration compact /></div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 md:hidden">
+              {campusTopics.map((topic) => {
+                const Icon = iconFor(topic);
+                return (
+                  <button key={topic.slug} onClick={() => chooseTopic(topic)} className="flex items-center gap-3 rounded-2xl border border-[#e3ded2] bg-white p-4 text-left shadow-sm">
+                    <span className="rounded-xl p-2.5" style={{ color: topic.color, backgroundColor: topic.softColor }}><Icon className="h-5 w-5" /></span>
+                    <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-800">{topic.label}</span><span className="mt-0.5 block text-xs text-slate-500">{topic.section}</span></span>
+                    <span className="text-xs font-bold text-slate-400">{topic.faqs.length}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] border border-[#dfddd2] bg-[#f2f4e8] p-4 shadow-[0_24px_70px_rgba(75,83,62,0.12)] sm:p-6">
+            <div className="absolute inset-0 opacity-25"><CampusIllustration selectedTopic={selectedTopic} compact /></div>
+            <div className="relative z-10">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <button onClick={returnToMap} className="rounded-full border border-[#e6e1d6] bg-white p-2 text-slate-500 transition hover:text-slate-900" aria-label="Back to campus map"><ArrowLeft className="h-4 w-4" /></button>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: selectedTopic.color }}>FAQ section</span>
+                    <h2 className="mt-1 text-xl font-black text-[#293d36] sm:text-2xl">{selectedTopic.section}</h2>
+                    <p className="mt-1 max-w-2xl text-xs font-medium leading-5 text-slate-500">{selectedTopic.description}</p>
+                  </div>
+                </div>
+                <span className="self-start whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-extrabold" style={{ color: selectedTopic.color, backgroundColor: selectedTopic.softColor }}>{selectedTopic.faqs.length} verified answers</span>
+              </div>
+
+              <div className="relative mt-5 min-h-[530px] space-y-3 md:space-y-0">
+                {visibleFaqs.map((faq, index) => (
+                  <motion.button
+                    key={faq.id}
+                    initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                    animate={{ opacity: selectedFaq && selectedFaq.id !== faq.id ? 0.4 : 1, scale: 1, y: 0 }}
+                    transition={{ delay: index * 0.045 }}
+                    onClick={() => chooseFaq(faq)}
+                    className={`faq-cloud relative block w-full rounded-[1.75rem] border border-white/90 bg-white/90 p-4 text-left shadow-[0_14px_30px_rgba(80,90,76,0.12)] transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-white/80 md:absolute md:w-[29%] ${cloudPositions[index]}`}
+                    style={{ animationDelay: `${index * -0.7}s` }}
+                  >
+                    <span className="block text-[10px] font-extrabold uppercase tracking-wider" style={{ color: selectedTopic.color }}>{faq.id}</span>
+                    <span className="mt-1 block text-sm font-bold leading-5 text-slate-700">{faq.question}</span>
+                  </motion.button>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={page === 0} className="rounded-full border border-[#ded9cd] bg-white p-2 text-slate-600 disabled:opacity-35" aria-label="Previous questions"><ChevronLeft className="h-4 w-4" /></button>
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Cloud {page + 1} of {totalPages}</span>
+                  <button onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))} disabled={page === totalPages - 1} className="rounded-full border border-[#ded9cd] bg-white p-2 text-slate-600 disabled:opacity-35" aria-label="Next questions"><ChevronRight className="h-4 w-4" /></button>
+                </div>
+              )}
+            </div>
+          </motion.section>
+        )}
+
+        <div className="mt-7 flex flex-col gap-4 rounded-[1.5rem] border border-[#e5dfd2] bg-white/75 p-5 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-3xl text-xs font-medium leading-5">Map locations organize the knowledge thematically. They are not the physical offices responsible for each topic.</p>
+          <Link href="/community" className="flex shrink-0 items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#657e69] transition hover:text-[#31483e]">Still unsure? Ask the community <ArrowRight className="h-4 w-4" /></Link>
+        </div>
+      </section>
+
+      <div className="fixed left-0 top-0 z-30 hidden h-full w-4 md:block" onMouseEnter={showSidebar} />
+
+      <AnimatePresence>
+        {sidebarVisible && (
+          <motion.aside
+            initial={{ x: -260 }}
+            animate={{ x: 0 }}
+            exit={{ x: -260 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed left-0 top-0 z-40 hidden h-screen w-56 border-r border-[#e2ddd0] bg-[#fffdf8] shadow-xl md:block"
+            onMouseEnter={showSidebar}
+            onMouseLeave={hideSidebar}
+          >
+            <SidebarNav selectedTopic={selectedTopic} onChoose={chooseTopic} />
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} onChoose={chooseFaq} />
+
+      <AnimatePresence>
+        {selectedFaq && selectedTopic && (
+          <motion.div className="fixed inset-0 z-40 flex items-center justify-center bg-[#26332d]/25 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div
+              ref={answerRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedFaq.question}
+              className="max-h-[82vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] border border-[#e1dcd0] bg-[#fffdf8] p-5 shadow-2xl outline-none sm:p-7"
+              initial={{ opacity: 0, y: 25, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.98 }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: selectedTopic.color }}>{selectedTopic.label} · FAQ {selectedFaq.id}</span>
+                  <h3 className="mt-2 text-xl font-black leading-tight text-[#293d36] sm:text-2xl">{selectedFaq.question}</h3>
+                </div>
+                <button onClick={closeFaq} className="shrink-0 rounded-full bg-[#f4f0e7] p-2 text-slate-500 transition hover:text-slate-900" aria-label="Close answer"><X className="h-4 w-4" /></button>
+              </div>
+              {getTLDR(selectedFaq) && (
+                <div className="mt-5">
+                  <TLDRBlock tldr={getTLDR(selectedFaq)!} />
+                </div>
+              )}
+              <p className="mt-5 whitespace-pre-line text-sm font-medium leading-7 text-slate-600 sm:text-[15px]"><RichAnswer text={selectedFaq.answer} /></p>
+              <div className="mt-6 flex flex-col gap-3 border-t border-[#ebe5d9] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Verified from the Samagama FAQ</span>
+                <button onClick={copyLink} className="flex items-center gap-2 self-start rounded-full border border-[#e0dbcf] bg-white px-4 py-2 text-xs font-extrabold text-slate-600 transition hover:bg-[#f7f3eb]">
+                  {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Link copied" : "Copy link"}
                 </button>
               </div>
-
-              {/* Spotlight Suggestions/Results feed */}
-              <div className="max-h-[300px] overflow-y-auto p-2.5">
-                {spotlightResults.length > 0 ? (
-                  <div className="space-y-1">
-                    <span className="text-[8px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 pb-1 block">
-                      Matches Found
-                    </span>
-                    {spotlightResults.map((faq, idx) => (
-                      <button
-                        key={faq.id}
-                        onClick={() => handleSpotlightSelect(faq)}
-                        className={`w-full text-left px-3.5 py-3 rounded-xl flex items-center justify-between text-xs transition-colors cursor-pointer select-none ${
-                          focusedIndex === idx 
-                            ? 'bg-slate-50 text-indigo-700 font-bold' 
-                            : 'text-slate-600 hover:bg-slate-50/50'
-                        }`}
-                        onMouseEnter={() => setFocusedIndex(idx)}
-                      >
-                        <div className="flex items-center space-x-3 min-w-0 pr-4">
-                          <BookOpen className="h-4 w-4 text-indigo-500 flex-shrink-0" />
-                          <span className="truncate text-slate-700">{faq.question}</span>
-                        </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    ))}
-                  </div>
-                ) : spotlightQuery.trim() ? (
-                  <div className="p-8 text-center text-slate-500 space-y-1">
-                    <AlertCircle className="h-5 w-5 mx-auto text-slate-400 animate-bounce" />
-                    <p className="text-xs font-bold">No direct guidelines found</p>
-                    <p className="text-[10px] text-slate-450 max-w-[200px] mx-auto">
-                      Press Escape to exit and try browsing deck categories.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4 p-2.5">
-                    {/* Default suggested searches */}
-                    <div>
-                      <span className="text-[8px] font-extrabold uppercase tracking-widest text-slate-450 px-1 pb-2 block">
-                        Trending Searches
-                      </span>
-                      <div className="space-y-1">
-                        {trendingFAQs.map((faq) => (
-                          <button
-                            key={faq.id}
-                            onClick={() => handleSpotlightSelect(faq)}
-                            className="w-full text-left px-3 py-2.5 rounded-lg text-slate-600 hover:text-indigo-750 hover:bg-slate-50/50 flex items-center space-x-3 text-xs transition-all select-none"
-                          >
-                            <Flame className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-                            <span className="truncate font-semibold">{faq.question}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Spotlight footer shortcut instructions */}
-              <div className="px-4.5 py-2.5 bg-slate-50/80 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center justify-between">
-                <span>Select with mouse click</span>
-                <span>ESC to Close</span>
-              </div>
-
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
+}
+
+export default function FAQPage() {
+  return <Suspense fallback={<div className="py-20 text-center text-sm font-semibold text-slate-500">Loading campus map...</div>}><FAQExperience /></Suspense>;
 }

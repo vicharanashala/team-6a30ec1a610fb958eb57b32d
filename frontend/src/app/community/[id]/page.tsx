@@ -313,7 +313,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                 <span>AI response not sufficient?</span>
               </h5>
               <p className="text-[10px] text-slate-500 leading-normal font-medium max-w-sm">
-                If the automated guides didn't resolve your doubt, request a live human mentor to join the chat queue.
+                If the automated guides did not resolve your doubt, request a live human mentor to join the chat queue.
               </p>
             </div>
             <button

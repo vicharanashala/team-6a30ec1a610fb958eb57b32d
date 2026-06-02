@@ -191,7 +191,7 @@ export default function AskDoubtsPage() {
                           href={`/community/${response.possible_duplicate.id}`}
                           className="text-[10px] text-indigo-650 hover:underline font-semibold flex items-center space-x-1"
                         >
-                          <span>"{response.possible_duplicate.title}"</span>
+                          <span>&ldquo;{response.possible_duplicate.title}&rdquo;</span>
                           <ChevronRight className="h-3 w-3" />
                         </a>
                       </div>
