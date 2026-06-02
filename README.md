@@ -1,7 +1,7 @@
 # AI-Powered Internship Help Platform — Full MVP Build Prompt
 
 
-- Samagama FAQ Maps Version : [Samagama FAQ](https://samagama-faec-alpha.vercel.app/)
+- Samagama FAQ Maps Version : [Samagama FAQ]([https://samagama-faq-alpha.vercel.app/]
 
   
 You are a senior staff-level AI architect, full-stack engineer, product designer, database architect, and scalable systems engineer.
