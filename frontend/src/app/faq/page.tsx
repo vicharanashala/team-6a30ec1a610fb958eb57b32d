@@ -83,6 +83,46 @@ function iconFor(topic: CampusTopic) {
   return iconMap[topic.icon as keyof typeof iconMap] ?? HelpCircle;
 }
 
+function SidebarNav({
+  selectedTopic,
+  onChoose,
+}: {
+  selectedTopic?: CampusTopic;
+  onChoose: (topic: CampusTopic) => void;
+}) {
+  return (
+    <nav className="flex h-full flex-col py-5">
+      <div className="mb-3 border-b border-[#ebe5d9] px-4 pb-3">
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#66806c]">Campus Guide</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2">
+        {campusTopics.map((topic) => {
+          const Icon = iconFor(topic);
+          const isActive = selectedTopic?.slug === topic.slug;
+          return (
+            <button
+              key={topic.slug}
+              onClick={() => onChoose(topic)}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition
+                ${isActive
+                  ? "bg-[#f0ebe0] font-extrabold text-[#263b34]"
+                  : "font-semibold text-[#5a6b60] hover:bg-[#f5f1e8] hover:text-[#263b34]"
+                }`}
+              style={isActive ? { borderLeft: `3px solid ${topic.color}`, paddingLeft: "9px" } : {}}
+            >
+              <span className="shrink-0" style={{ color: topic.color }}>
+                <Icon size={16} strokeWidth={2.5} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-xs">{topic.label}</span>
+              <span className="shrink-0 text-[10px] font-bold text-[#8f9d8f]">{topic.faqs.length}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 function TLDRBlock({ tldr }: { tldr: TLDR }) {
   return (
     <div className="mb-5 overflow-hidden rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-amber-50/60">
@@ -280,7 +320,18 @@ function FAQExperience() {
   const [page, setPage] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const sidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const answerRef = useRef<HTMLDivElement>(null);
+
+  function showSidebar() {
+    if (sidebarTimerRef.current) clearTimeout(sidebarTimerRef.current);
+    setSidebarVisible(true);
+  }
+
+  function hideSidebar() {
+    sidebarTimerRef.current = setTimeout(() => setSidebarVisible(false), 250);
+  }
 
   const totalPages = selectedTopic ? Math.ceil(selectedTopic.faqs.length / PAGE_SIZE) : 0;
   const visibleFaqs = selectedTopic?.faqs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE) ?? [];
@@ -461,6 +512,24 @@ function FAQExperience() {
           <Link href="/community" className="flex shrink-0 items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#657e69] transition hover:text-[#31483e]">Still unsure? Ask the community <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
+
+      <div className="fixed left-0 top-0 z-30 hidden h-full w-4 md:block" onMouseEnter={showSidebar} />
+
+      <AnimatePresence>
+        {sidebarVisible && (
+          <motion.aside
+            initial={{ x: -260 }}
+            animate={{ x: 0 }}
+            exit={{ x: -260 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed left-0 top-0 z-40 hidden h-screen w-56 border-r border-[#e2ddd0] bg-[#fffdf8] shadow-xl md:block"
+            onMouseEnter={showSidebar}
+            onMouseLeave={hideSidebar}
+          >
+            <SidebarNav selectedTopic={selectedTopic} onChoose={chooseTopic} />
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} onChoose={chooseFaq} />
 
