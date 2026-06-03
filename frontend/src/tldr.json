@@ -1,0 +1,773 @@
+{
+  "1.2": {
+    "headline": "VINS is the Vicharanashala Internship — an online programme open to anyone who clears our interview.",
+    "pairs": [],
+    "action": "The work is real open-source contribution under a mentor, the certificate is from the Vicharanashala Lab for Education Design at IIT Ropar, and the programme itself is free (we charge nothing)."
+  },
+  "1.3": {
+    "headline": "VINS is structured as four phases.",
+    "pairs": [],
+    "action": "Either way, you walk away with a real open-source contribution to your name and a mentor who knows you well."
+  },
+  "1.4": {
+    "headline": "The internship is for currently-enrolled students at any college or university — undergraduate, postgraduate, or doctoral.",
+    "pairs": [],
+    "action": ""
+  },
+  "2.1": {
+    "headline": "Start any time in 2026 — but finish by 31 Dec 2026, and the earlier the better.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "Hard Rule",
+        "value": "Must finish by 31 December 2026 — no exceptions."
+      },
+      {
+        "icon": "📅",
+        "label": "Start",
+        "value": "Any time in 2026, but May–July gives the full cohort experience."
+      },
+      {
+        "icon": "💡",
+        "label": "Tip",
+        "value": "Earlier start = stronger TA support, peer cohort, and training."
+      }
+    ],
+    "action": "Pick your earliest realistic start date and set it on your dashboard now."
+  },
+  "2.4": {
+    "headline": "This is not an arrangement we offer.",
+    "pairs": [],
+    "action": "If your exams fall inside the cohort duration, defer your start to after your exams end, opt in then, and run the internship at full attention."
+  },
+  "3.3": {
+    "headline": "No hard deadline, but submit early — cohort and TA support are concentrated in the summer window.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Deadline",
+        "value": "No hard cut-off date, but submit as early as possible."
+      },
+      {
+        "icon": "⚠️",
+        "label": "Risk",
+        "value": "Late NOC = delayed start, no cohort, lighter TA support."
+      }
+    ],
+    "action": "Upload your signed NOC as early as possible — don't wait for a deadline."
+  },
+  "3.4": {
+    "headline": "No — we provide a printable NOC format.",
+    "pairs": [],
+    "action": "Download the NOC format from samagama.in, print it, get it signed and stamped."
+  },
+  "3.5": {
+    "headline": "A college's own NOC format is acceptable, as long as all four of the required entries are present on it: the signing authority's (HOD / Dean / Program Chair / Principal) handwritten signature — this is the most important item, the signing authority's official email address (we cross-check with that person to verify the signature is genuine), your full name, andyour signature.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Required",
+        "value": "4 items: HOD signature, HOD email, your full name, your signature."
+      },
+      {
+        "icon": "🔄",
+        "label": "Alternative",
+        "value": "College's own format is fine if all 4 items are present."
+      }
+    ],
+    "action": "Check your college NOC has HOD signature, HOD email, your name, and your signature."
+  },
+  "3.6": {
+    "headline": "Three things are required, all on the NOC format we provide: the authorised signatory's handwritten signature,the institutional rubber stamp / seal applied in the designated area, andthe signatory's email address filled in the designated field — we automatically cross-check with that person to verify the signature is genuine.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Required",
+        "value": "Handwritten HOD signature + institutional stamp + signatory email."
+      },
+      {
+        "icon": "⚠️",
+        "label": "Not accepted",
+        "value": "Digital signatures on PDF are not accepted."
+      }
+    ],
+    "action": "Hand-sign, stamp, and fill in the signatory email on the NOC before uploading."
+  },
+  "3.7": {
+    "headline": "No. Upload the signed PDF yourself from your dashboard — email NOC submissions are no longer accepted.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "Retired",
+        "value": "Email-forward NOC path has been retired — do not email NOCs."
+      },
+      {
+        "icon": "📋",
+        "label": "Only path",
+        "value": "Download → sign → upload the PDF yourself from your dashboard."
+      }
+    ],
+    "action": "Upload the signed PDF yourself from the dashboard — do not email it."
+  },
+  "3.8": {
+    "headline": "Use the two dashboard buttons on samagama.in: Download blank NOC → get it signed → Upload signed NOC (PDF, max 1 MB).",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Steps",
+        "value": "1. Download blank NOC. 2. Get it signed & stamped. 3. Upload signed PDF (max 1 MB)."
+      },
+      {
+        "icon": "📍",
+        "label": "Where",
+        "value": "Both buttons are on your samagama.in dashboard — top bar pill, Result card, or NOC section."
+      }
+    ],
+    "action": "Use the Download / Upload buttons on your samagama.in dashboard."
+  },
+  "3.9": {
+    "headline": "Wait 1 hour to 1 working day. There is no faster route; provisional offer was retired on 27 May 2026.",
+    "pairs": [
+      {
+        "icon": "⏰",
+        "label": "Wait",
+        "value": "1 hour to 1 full working day for NOC verification."
+      },
+      {
+        "icon": "⚠️",
+        "label": "No fast track",
+        "value": "Provisional offer / self-declaration route retired on 27 May 2026."
+      }
+    ],
+    "action": "Upload your signed NOC as early as you can and wait — verification takes up to 1 working day."
+  },
+  "3.10": {
+    "headline": "The internship is open only to candidates currently enrolled in a full-time degree programme at a recognised college or university.",
+    "pairs": [],
+    "action": "If enrolled in a full-time degree, get the NOC from that college — not from the online course provider."
+  },
+  "3.11": {
+    "headline": "Your selection is already confirmed the moment your yellow VINS (or green VISE) result panel appears on your samagama.in dashboard — that is the official confirmation of your selection, and it is what your HOD should sign your NOC on the basis of.",
+    "pairs": [
+      {
+        "icon": "📌",
+        "label": "Proof",
+        "value": "Your yellow VINS result panel on the dashboard is your official selection confirmation."
+      },
+      {
+        "icon": "⚠️",
+        "label": "Unavailable",
+        "value": "No separate confirmation letter; offer letter issued only after NOC validation."
+      }
+    ],
+    "action": "Show your VINS result panel on the dashboard as proof of selection — that is what we give."
+  },
+  "3.12": {
+    "headline": "Your NOC must be signed by an authorised signatory at the institution where you are enrolled as a student — such as your HOD, Dean, Principal, or Training & Placement Officer.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "Cannot sign",
+        "value": "Sudarshan Iyengar (IIT Ropar faculty) cannot sign NOCs in a personal capacity."
+      },
+      {
+        "icon": "📋",
+        "label": "Who can",
+        "value": "HOD / Dean / Principal / T&P Officer at your enrolled institution."
+      }
+    ],
+    "action": "Get your NOC signed by your own college's HOD / Dean / T&P Officer — not by IIT Ropar faculty."
+  },
+  "4.3": {
+    "headline": "There are two paths to your offer letter: Path 1 — Formal offer letter (default).",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Path 1",
+        "value": "Formal letter: NOC verified + dates confirmed → auto-issued within an hour."
+      },
+      {
+        "icon": "📋",
+        "label": "Path 2",
+        "value": "Tentative letter: upload self-declaration → issued immediately, formal follows after NOC."
+      },
+      {
+        "icon": "📍",
+        "label": "Where",
+        "value": "Download from the Offer Letter card on your dashboard — not emailed to you."
+      }
+    ],
+    "action": "Upload NOC → confirm dates → offer letter auto-issues within an hour. Download from dashboard."
+  },
+  "4.5": {
+    "headline": "Once you have opted into VINS in the chat with Yaksha (see §4.2), log in to samagama.in.",
+    "pairs": [],
+    "action": "If you need to change the period later, edit the dates on the same card and upload a fresh NOC matching the new period."
+  },
+  "4.6": {
+    "headline": "Minor/Major in AI course from IIT Ropar is a certification course and there will be a different track of internship equivalent to them.",
+    "pairs": [],
+    "action": "For you to be part of this internship programme you should be a registered student in a UG/PG programme with some university."
+  },
+  "4.7": {
+    "headline": "Reply to the offer-letter email with the exact acceptance statement, or attach a signed PDF.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Email reply",
+        "value": "Reply to the offer-letter email with the exact acceptance statement + your name + date."
+      },
+      {
+        "icon": "🔄",
+        "label": "Alt: PDF",
+        "value": "Download, fill name/date, sign, scan, and attach the PDF to your reply."
+      },
+      {
+        "icon": "⏰",
+        "label": "Deadline",
+        "value": "Reply within 5 days. Use Reply All — keep sudarshan@iitrpr.ac.in on the thread."
+      }
+    ],
+    "action": "Reply to the offer-letter email with the exact acceptance statement + your name and date."
+  },
+  "4.8": {
+    "headline": "Deviation from the exact format = immediate withdrawal, final. No exceptions without the appeal in §4.9.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "Withdrawal",
+        "value": "Any deviation from the exact format = immediate and final withdrawal."
+      },
+      {
+        "icon": "📋",
+        "label": "Non-compliant",
+        "value": "Paraphrasing, bare 'I accept', missing date, missing FAQ clause."
+      }
+    ],
+    "action": "Copy-paste the acceptance statement exactly — do not paraphrase or shorten it."
+  },
+  "4.9": {
+    "headline": "Appeal by emailing sudarshansudarshan@gmail.com with subject 'Request to Reconsider: Confirmation Reply Error'.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Appeal to",
+        "value": "sudarshansudarshan@gmail.com — subject must be exact."
+      },
+      {
+        "icon": "📋",
+        "label": "Subject line",
+        "value": "Request to Reconsider: Confirmation Reply Error (copy-paste exactly)."
+      },
+      {
+        "icon": "📋",
+        "label": "Outcome",
+        "value": "Granted appeals go to a separate track with an extra assignment."
+      }
+    ],
+    "action": "Email sudarshansudarshan@gmail.com with subject 'Request to Reconsider: Confirmation Reply Error'."
+  },
+  "4.10": {
+    "headline": "The dashboard tracks your NOC, your internship dates, and your offer letter — it does not track the acceptance email.",
+    "pairs": [],
+    "action": "If several working days pass and you have heard nothing, log in to samagama.in and type #escalate in the Yaksha chat — we will check the state of your reply."
+  },
+  "4.11": {
+    "headline": "Until your formal offer letter has been generated, you can change your start and end dates yourself from the dashboard at any time — open the Confirm Internship Dates card under My Journey and edit the dates.",
+    "pairs": [],
+    "action": "If you also need a re-issued NOC from your college reflecting the new dates, upload the updated NOC via the dashboard."
+  },
+  "4.12": {
+    "headline": "Kickoff is for the main summer cohort only. Check your email and Yaksha chat for the Zoom link.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Who gets kickoff",
+        "value": "Main summer cohort starting at the May–July window only."
+      },
+      {
+        "icon": "📍",
+        "label": "Link via",
+        "value": "Email + Yaksha chat on samagama.in. Not sent separately."
+      }
+    ],
+    "action": "Check your email and Yaksha chat on samagama.in for the Zoom kickoff link."
+  },
+  "4.14": {
+    "headline": "Your internship begins on the start date you confirmed on the dashboard — the same date printed on your offer letter.",
+    "pairs": [],
+    "action": "Log in on your start date morning. Yaksha will guide you through Day 1."
+  },
+  "4.15": {
+    "headline": "The two tracks are finalised at the interview stage, and we do not move candidates between them.",
+    "pairs": [],
+    "action": "Your best path forward is to confirm your VINS start dates and get your NOC uploaded — you're already in a strong position."
+  },
+  "4.16": {
+    "headline": "Your HOD (not you) must email harshdeep.r@vicharanashala.ai to request a date change after the offer letter is issued.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Who requests",
+        "value": "The HOD who signed your NOC — not you directly."
+      },
+      {
+        "icon": "📧",
+        "label": "Email to",
+        "value": "harshdeep.r@vicharanashala.ai, CC sudarshan@iitrpr.ac.in."
+      },
+      {
+        "icon": "📋",
+        "label": "What changes",
+        "value": "Dates unlocked → you re-save → formal offer letter re-issued (old one void)."
+      }
+    ],
+    "action": "Ask your HOD to email harshdeep.r@vicharanashala.ai with the date change request."
+  },
+  "4.17": {
+    "headline": "Check the Announcements bell on your dashboard daily — Zoom links are not sent by email. Attendance is mandatory.",
+    "pairs": [
+      {
+        "icon": "📍",
+        "label": "Link location",
+        "value": "Announcements bell on your samagama.in dashboard — check it daily."
+      },
+      {
+        "icon": "⚠️",
+        "label": "Mandatory",
+        "value": "Daily standups are mandatory. See §10.7 for the three-part attendance rule."
+      },
+      {
+        "icon": "🔄",
+        "label": "Late joiners",
+        "value": "Complete the proctored catch-up on ViBe before joining regular standups."
+      }
+    ],
+    "action": "Check the Announcements bell on your dashboard every morning before the session."
+  },
+  "4.18": {
+    "headline": "On your dashboard, just before 'Start the internship,' you'll see a step called 'Provide your Zoom ID.' Enter the exact email address linked to your Zoom account — the one you use (or will use) to join the daily live sessions — and save it.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "What to enter",
+        "value": "The exact email address linked to your Zoom account — check before saving."
+      },
+      {
+        "icon": "⚠️",
+        "label": "Why it matters",
+        "value": "Attendance is matched by email. Wrong ID = attendance not credited to you."
+      }
+    ],
+    "action": "Enter your exact Zoom-account email just before starting — double-check before saving."
+  },
+  "5.1": {
+    "headline": "Work happens during the internship only. No work before your start date, and no stipend.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "No pre-work",
+        "value": "Work starts on your confirmed start date — not before."
+      },
+      {
+        "icon": "💰",
+        "label": "Stipend",
+        "value": "This is an unpaid internship. No stipend."
+      }
+    ],
+    "action": "Do nothing before your start date. Log in on Day 1 and Yaksha will guide you."
+  },
+  "5.5": {
+    "headline": "Yes — a personal laptop is required.",
+    "pairs": [],
+    "action": "We do not maintain a fixed software-preload list — your mentor will guide you on the specific tools needed once your project is assigned."
+  },
+  "5.7": {
+    "headline": "After Silver: submit a PR to any open-source project under a Vicharanashala org on GitHub.",
+    "pairs": [
+      {
+        "icon": "🏆",
+        "label": "Gold badge",
+        "value": "Submit a meaningful PR to any open-source repo under a Vicharanashala GitHub org."
+      }
+    ],
+    "action": "After Silver phase, open a PR to any open-source repo under a Vicharanashala GitHub org."
+  },
+  "6.1": {
+    "headline": "All communication through official channels only. Unofficial WhatsApp / Telegram groups = immediate withdrawal.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "Prohibited",
+        "value": "Unofficial WhatsApp / Telegram / Discord groups = serious consequences."
+      },
+      {
+        "icon": "📋",
+        "label": "Official channels",
+        "value": "Yaksha chat (#escalate) · no-reply@vicharanashala.ai (outbound only) · moderated WhatsApp group (invite-only)."
+      },
+      {
+        "icon": "📧",
+        "label": "Direct email",
+        "value": "sudarshansudarshan@gmail.com — only when Yaksha cannot help."
+      }
+    ],
+    "action": "Use only Yaksha chat, the moderated WhatsApp group (post-offer), or direct email."
+  },
+  "7.1": {
+    "headline": "A data-sync issue sometimes occurs where the chat session closes but the interview record doesn't update to \"completed.\" The team will check your record and manually mark it as complete if needed.",
+    "pairs": [
+      {
+        "icon": "⏰",
+        "label": "Wait",
+        "value": "1–2 hours for manual resolution. Team will unblock you."
+      },
+      {
+        "icon": "📧",
+        "label": "Still stuck",
+        "value": "Email sudarshansudarshan@gmail.com if not resolved."
+      }
+    ],
+    "action": "Wait 1–2 hours. If still stuck, email sudarshansudarshan@gmail.com."
+  },
+  "8.1": {
+    "headline": "Vicharanashala does not send formal evaluation or grade reports to universities — that process is between you and your college.",
+    "pairs": [],
+    "action": "If your college specifically requires a structured evaluation form or a report on your performance, raise that with them directly — we can provide the certificate and, if earned, a letter of recommendation, but we don't have a process for sending grade reports to universities."
+  },
+  "8.4": {
+    "headline": "There is no WhatsApp group for this internship.",
+    "pairs": [],
+    "action": "We use whatsapp for intermittent issue handling and delete them after the task."
+  },
+  "9.1": {
+    "headline": "Rosetta is your internship journal — a 65-day document, one entry per day, every day, for the full duration of Summership 2026.",
+    "pairs": [],
+    "action": "Write daily. Start from Day 1 — there is no catch-up window at the end."
+  },
+  "9.2": {
+    "headline": "Write every day for 65 days. Entries are private; mentors do not read them during the internship.",
+    "pairs": [
+      {
+        "icon": "📅",
+        "label": "65 entries",
+        "value": "One entry per day for 65 days. Write at the end of each day, not all at once."
+      },
+      {
+        "icon": "🔒",
+        "label": "Privacy",
+        "value": "Mentors do not read Rosetta during the internship — it is purely for you."
+      }
+    ],
+    "action": "Write every day for 65 days. Mentors will not read your entries during the internship."
+  },
+  "9.3": {
+    "headline": "Use the daily prompt as a guide. Write at the end of each day, not all at once at the end of the week.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Use the prompt",
+        "value": "Let the daily prompt guide you. It is a starting point, not a rigid structure."
+      },
+      {
+        "icon": "💡",
+        "label": "Best practice",
+        "value": "Write the same day, while the experience is fresh."
+      }
+    ],
+    "action": "Write at the end of each day, not in one sitting at the end of the week."
+  },
+  "9.5": {
+    "headline": "Simple: Open your Rosetta Google Doc.Scroll to the entry for today's day number.Fill in the date at the top of the entry.Read the thinking routine name and its one-line description.Answer the three prompts in the writing boxes below.Close it and get on with your day.",
+    "pairs": [],
+    "action": "Simple: Open your Rosetta Google Doc.Scroll to the entry for today's day number.Fill in the date at the top of the entry.Read the thinking routine name and its one-line description.Answer the three prompts in the writing boxes below.Close it and get on with your day."
+  },
+  "9.6": {
+    "headline": "There is no minimum or maximum word count.",
+    "pairs": [],
+    "action": "What is not acceptable: one-word answers, copy-pasted text, vague non-answers like \"today was productive,\" or anything that reads like it was generated by an AI."
+  },
+  "9.7": {
+    "headline": "Not what sounds impressive.",
+    "pairs": [],
+    "action": "If something clicked and you are genuinely excited, write that."
+  },
+  "9.8": {
+    "headline": "This is the one firm rule of Rosetta.",
+    "pairs": [],
+    "action": "Do not use them here."
+  },
+  "9.9": {
+    "headline": "Yes — re-submission is allowed until the deadline. There is no penalty for editing a draft.",
+    "pairs": [
+      {
+        "icon": "🔄",
+        "label": "Re-submission",
+        "value": "Allowed until the deadline — edit a draft at any time."
+      },
+      {
+        "icon": "💡",
+        "label": "No penalty",
+        "value": "Editing a draft before submission is always allowed."
+      }
+    ],
+    "action": "Use Yaksha in chat, or reach out to your scholar."
+  },
+  "9.10": {
+    "headline": "We will not access your journal during the 65 days.",
+    "pairs": [],
+    "action": "The journal is only useful if it is honest, and it is only honest if you are not performing for an audience."
+  },
+  "9.11": {
+    "headline": "Your Roshni passes only if the corresponding Day-N entry is complete. Complete them in order.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Rule",
+        "value": "Roshni passes only if the corresponding Day-N entry is complete."
+      },
+      {
+        "icon": "📋",
+        "label": "Order",
+        "value": "Complete Day entries in sequence — skipping days blocks Roshni."
+      }
+    ],
+    "action": "Complete each Day entry in sequence before attempting the corresponding Roshni."
+  },
+  "9.12": {
+    "headline": "On or before Day 65, share your Rosetta Google Doc with the programme coordinator's email address (shared during wrap-up week).",
+    "pairs": [],
+    "action": "An incomplete or AI-generated journal will not be accepted."
+  },
+  "10.1": {
+    "headline": "Access Phase 1 after your internship formally starts. Check your dashboard on Day 1 for the live-session schedule.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "When",
+        "value": "Start of your internship. Dashboard goes live on your confirmed start date."
+      },
+      {
+        "icon": "📍",
+        "label": "Where",
+        "value": "Check Yaksha chat and your dashboard for the live-session schedule."
+      }
+    ],
+    "action": "Log in on your internship start date and check the dashboard for the Phase 1 schedule."
+  },
+  "10.2": {
+    "headline": "Follow these steps: Click the AI Fundamentals registration link sent in the Phase 1 launch email.You'll be redirected to the Vibe sign-in page.",
+    "pairs": [],
+    "action": "If you don't have a Vibe account yet, create one using the same Gmail you used to register on Samagama.Log in with your credentials.After logging in, open the course registration link again in your browser — the second click after login is what enrols you.Complete the brief registration form and submit.The course will appear instantly on your Vibe dashboard, ready to watch."
+  },
+  "10.3": {
+    "headline": "Please use the same email on both platforms so we can match your Phase 1 progress to your internship record.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "How",
+        "value": "Go to the Yaksha chat on samagama.in and type #exempt in the chat."
+      }
+    ],
+    "action": "In that case, tell Yaksha in your Samagama chat using the tag: `` #vibe-email your-gmail@gmail.com `` so we can link the records."
+  },
+  "10.4": {
+    "headline": "Yes — live sessions are mandatory for every intern, regardless of path.",
+    "pairs": [],
+    "action": ""
+  },
+  "10.7": {
+    "headline": "Three rolling 5-day thresholds: 85% attendance + 85% participation + 50% quiz pass. Falling all three = moved to next batch.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "3 rules",
+        "value": "85% Zoom presence + 85% poll/quiz response + 50% quiz pass — all simultaneously."
+      },
+      {
+        "icon": "📋",
+        "label": "Window",
+        "value": "Rolling 5-working-day measure — recent engagement, not a fixed average."
+      },
+      {
+        "icon": "⚠️",
+        "label": "If you slip",
+        "value": "Moved to a later batch — not a penalty, just a practical step."
+      }
+    ],
+    "action": "Stay present, respond to polls, and attempt every quiz — all three, every week."
+  },
+  "11.8": {
+    "headline": "85% Zoom presence, 85% poll/quiz response rate, and 50% minimum on every quiz — all three, always.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Three",
+        "value": "85% Zoom presence · 85% poll/quiz response · 50% quiz pass on every attempt."
+      },
+      {
+        "icon": "⚠️",
+        "label": "All must hold",
+        "value": "Falling short on any one of the three triggers a batch move."
+      }
+    ],
+    "action": "Keep all three thresholds — 85/85/50 — above their minimums every rolling 5-day window."
+  },
+  "11.9": {
+    "headline": "The programme does not look at a single average across the entire duration.",
+    "pairs": [],
+    "action": ""
+  },
+  "13.1": {
+    "headline": "ViBe tracks your progress automatically. Complete all videos and quizzes sequentially — skipping resets your progress.",
+    "pairs": [
+      {
+        "icon": "📋",
+        "label": "Progress",
+        "value": "Complete all videos and quizzes in sequence. Skipping resets progress."
+      },
+      {
+        "icon": "🔄",
+        "label": "Resuming",
+        "value": "Progress carries over — continue from where you left off."
+      }
+    ],
+    "action": "``` ⚠️ Logging in with a different email ID may result in access issues or missing course visibility."
+  },
+  "13.2": {
+    "headline": "Yes — your progress on ViBe carries over from previous attempts. Just continue from where you left off.",
+    "pairs": [],
+    "action": "Step 3: Flush Old DNS Cache (it's safe) Open Command Prompt as Admin.Run the following commands:ipconfig /flushdnsipconfig /releaseipconfig /renewRestart WiFi."
+  },
+  "13.3": {
+    "headline": "This may happen due to ViBe's monitored learning system.",
+    "pairs": [],
+    "action": "Common reasons include: Videos must be watched fully and in sequence (no skipping).Camera and microphone permissions must be enabled.Poor lighting or high background noise can affect playback.Switching tabs or staying idle may restart the video."
+  },
+  "13.5": {
+    "headline": "Try these troubleshooting steps in order: Refresh the page and check multiple timesInspect browser console: Right-click → Inspect → Go to Network or Console tab → Try watching the video and check for any visible errorsLog out and log in againUse a different browserClear browsing data and cache, then try to re-login If the issue persists after trying all steps, record the issue and contact Yaksha for any queries by mentioning #escalate-ViBe.",
+    "pairs": [],
+    "action": "Try these troubleshooting steps in order: Refresh the page and check multiple timesInspect browser console: Right-click → Inspect → Go to Network or Console tab → Try watching the video and check for any visible errorsLog out and log in againUse a different browserClear browsing data and cache, then try to re-login If the issue persists after trying all steps, record the issue and contact Yaksha for any queries by mentioning #escalate-ViBe."
+  },
+  "13.6": {
+    "headline": "This might be a skip made in the quiz/video item due to penalty score as the quiz/video item might not have been successfully completed/marked.",
+    "pairs": [],
+    "action": "In the meantime, you may try the following steps once: Refresh your browserLog out, clear your browser cache, and log in again."
+  },
+  "13.7": {
+    "headline": "You can take a proctored exam instead: 3 hours, two cameras, one human proctor. Score below 60% = rejoin next batch.",
+    "pairs": [
+      {
+        "icon": "⚠️",
+        "label": "Exam path",
+        "value": "3-hour proctored exam: two cameras + one human proctor live."
+      },
+      {
+        "icon": "📋",
+        "label": "Scoring",
+        "value": "< 60% = rejoin next batch · 60–80% = one more chance · > 80% = passed."
+      },
+      {
+        "icon": "⏰",
+        "label": "Frequency",
+        "value": "Exam runs once a fortnight — taking it may significantly delay your progress."
+      }
+    ],
+    "action": "Think carefully before requesting the exam path — it is far more demanding than ViBe normal mode."
+  },
+  "13.8": {
+    "headline": "Yes — the consent form is compulsory.",
+    "pairs": [],
+    "action": "The platform is designed with proctoring enabled throughout the learning process, which requires access to your webcam and microphone."
+  },
+  "13.9": {
+    "headline": "Penalty scores are generated when anomalies are detected during your activity on the ViBe platform (for example, irregular behavior while watching video lessons or attempting quizzes).",
+    "pairs": [],
+    "action": ""
+  },
+  "13.10": {
+    "headline": "Use the Flag feature on ViBe only for course content-related issues, such as problems with video content or quiz questions.",
+    "pairs": [],
+    "action": "Instead, contact Yaksha so the team can assist you faster."
+  },
+  "13.11": {
+    "headline": "Linear progression is enabled for every course on ViBe.",
+    "pairs": [],
+    "action": "Progress is sequential — finish the item in front of you, and the next one opens up automatically."
+  },
+  "13.12": {
+    "headline": "Although the left navigation panel displays the full list of items in your course, it is meant only as a progress map — not as a jump-to-anywhere menu.",
+    "pairs": [],
+    "action": "Instead of clicking through the left panel: Click Next Quiz or Next Lesson as it appears on the right panel.Let the platform unlock items for you in sequence as you complete each one."
+  },
+  "13.13": {
+    "headline": "No, this is not a bug.",
+    "pairs": [],
+    "action": "It is the system gently telling you: \"Please check — there is something earlier in the course that you haven't finished yet."
+  },
+  "13.14": {
+    "headline": "Follow these steps in order: Go back to the left panel and scroll through your course items from the beginning.Look for any item without a completion tick — that is your missed video or quiz.Complete that item (watch the full video, or attempt and submit the quiz).Refresh the page once you've completed all earlier items.If the Access Restricted banner still appears after refreshing and you are sure all earlier items are completed, report the issue to Yaksha by mentioning #escalate-ViBe.",
+    "pairs": [],
+    "action": "Follow these steps in order: Go back to the left panel and scroll through your course items from the beginning.Look for any item without a completion tick — that is your missed video or quiz.Complete that item (watch the full video, or attempt and submit the quiz).Refresh the page once you've completed all earlier items.If the Access Restricted banner still appears after refreshing and you are sure all earlier items are completed, report the issue to Yaksha by mentioning #escalate-ViBe."
+  },
+  "13.15": {
+    "headline": "If your answer to the check-in quiz didn't go through correctly, ViBe will take you back to the same clip and let you try again.",
+    "pairs": [],
+    "action": "This is called a re-watch, and it is part of the design — not a penalty."
+  },
+  "13.16": {
+    "headline": "ViBe quizzes come in four formats: FormatWhat it looks likeWhat to doPick one (MCQ)One right answer out of four or so optionsRead all the options before clicking Pick one or more (MSQ)\"Select all that apply\" — could be one correct option or severalRead each option carefully; small mistakes happen here most Type a number (NAT)A text box asking for a numeric valueType just the number — no units or extra symbols, unless the question explicitly asks True or FalseA statement with only two options — True or FalseRead the statement carefully; a single word like \"always,\" \"never,\" or \"only\" can flip the correct answer A small tip: watch the clip first, then answer.",
+    "pairs": [],
+    "action": "ViBe quizzes come in four formats: FormatWhat it looks likeWhat to doPick one (MCQ)One right answer out of four or so optionsRead all the options before clicking Pick one or more (MSQ)\"Select all that apply\" — could be one correct option or severalRead each option carefully; small mistakes happen here most Type a number (NAT)A text box asking for a numeric valueType just the number — no units or extra symbols, unless the question explicitly asks True or FalseA statement with only two options — True or FalseRead the statement carefully; a single word like \"always,\" \"never,\" or \"only\" can flip the correct answer A small tip: watch the clip first, then answer."
+  },
+  "13.17": {
+    "headline": "No — and this is one of the most important things to understand before reading the rest of this section.",
+    "pairs": [],
+    "action": "Always check the course-specific guidelines shared by your instructor or programme team before each course you join."
+  },
+  "13.18": {
+    "headline": "While a lesson plays, a small helper runs gently on your device using your camera and microphone.",
+    "pairs": [],
+    "action": "Specifically, it looks at five things: A face is visible — to confirm you are really there.Only one face is in frame — to confirm the learning is yours.There is enough light on your face — a silhouette is hard to recognise.The room isn't full of voices — no talking, TV, or background podcasts.You are looking at the screen — brief glances away are fine; long stretches feel like drifting off."
+  },
+  "13.19": {
+    "headline": "ViBe does not continuously record videos of you.",
+    "pairs": [],
+    "action": "The camera and microphone are used for real-time presence checks only.Long recordings of your face or voice are not stored.When the lesson ends, the helper goes quiet too.All data is handled strictly in accordance with the consent terms shown when you signed up."
+  },
+  "13.20": {
+    "headline": "Sitting with a window directly behind you during the day.",
+    "pairs": [],
+    "action": "The helper then struggles to confirm your presence, and your lesson may pause or rewind."
+  },
+  "13.21": {
+    "headline": "If a clip keeps stopping or going back to the start, the cause is almost always something small in your environment, not the platform itself.",
+    "pairs": [],
+    "action": "Run through this checklist: Your face is too dark → add a lamp in front of you.Your face is partly out of frame → raise the laptop or sit a bit closer to the camera.There are voices in the background → close the door, or move to a quieter room.You switched tabs or went idle → stay on the ViBe tab; take breaks between clips, not during them.Camera or mic permission dropped → check the lock icon in your browser's address bar and confirm both are set to \"Allow\"."
+  },
+  "13.23": {
+    "headline": "Only you — the registered Learner — should be in the camera frame during a lesson.",
+    "pairs": [],
+    "action": "> 📌 Note: As explained in 12.17, the single-face-in-frame check is an instructor-controlled setting."
+  },
+  "13.24": {
+    "headline": "Your progress is saved on the server, tied to your registered email — not on your browser or your computer.",
+    "pairs": [],
+    "action": "So: Refreshing the page, clearing cache, switching browsers, or even reinstalling your browser will not wipe your progress.The moment you log back in with the same registered email, all your completed clips and quizzes will be exactly where you left them."
+  },
+  "13.25": {
+    "headline": "Yes — small, regular sessions work far better than long marathon sessions.",
+    "pairs": [],
+    "action": "A clip is short — finish it first.Treat each quiz as a gentle check-in, not a high-stakes test.For programmes with deadlines (such as internships or faculty cohorts), aim for the daily progress target announced by your programme team — typically around 3.33% per day."
+  },
+  "13.26": {
+    "headline": "A ViBe-friendly study spot needs only three things: Light in front of your face — a lamp or window facing you, never behind.Just you in the camera frame — ask family, friends, or pets not to wander through.A reasonably quiet room — no TV, no music with words, no one else on a call nearby.",
+    "pairs": [],
+    "action": "Two minutes of setup before you start saves a lot of small frustrations during the lesson."
+  },
+  "14.23": {
+    "headline": "Teams are expected to self-organize internal team coordination (e.g., a small WhatsApp/email thread limited to the four teammates).",
+    "pairs": [],
+    "action": "Official programme updates will continue to come via email and Yaksha chat on samagama.in."
+  }
+}

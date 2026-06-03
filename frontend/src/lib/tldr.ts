@@ -1,4 +1,9 @@
 import { FAQEntry } from "../data/campus-faq";
+import staticTldrs from "../tldr.json";
+
+/** Static TLDR lookup — key is FAQ id. Missing ids fall through to the algorithm. */
+const staticTLDR: Record<string, { headline: string; pairs: KeyValue[]; action: string }> =
+  staticTldrs as Record<string, { headline: string; pairs: KeyValue[]; action: string }>;
 
 export type KeyValue = {
   icon: string;
@@ -99,6 +104,14 @@ function trimLen(s: string, max = 130): string {
 
 export function generateTLDR(faq: FAQEntry): TLDR | null {
   if (faq.answer.length <= 350) return null;
+
+  /* ── 1. Static override ─────────────────────────────────────────────────── */
+  const known = staticTLDR[faq.id];
+  if (known) {
+    return { headline: known.headline, pairs: known.pairs, action: known.action };
+  }
+
+  /* ── 2. Algorithmic fallback ───────────────────────────────────────────── */
 
   const sents = sentences(faq.answer);
   if (sents.length < 2) return null;
