@@ -8,6 +8,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        bricolage: ['var(--font-bricolage)', 'system-ui', 'sans-serif'],
+        jakarta: ['var(--font-jakarta)', 'system-ui', 'sans-serif'],
+        'dm-serif': ['var(--font-dm-serif)', 'Georgia', 'serif'],
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":

@@ -153,6 +153,139 @@ function TLDRBlock({ tldr }: { tldr: TLDR }) {
   );
 }
 
+function SimilarQuestions({
+  selectedFaq,
+  selectedTopic,
+  openAccordion,
+  onToggle,
+}: {
+  selectedFaq: FAQEntry;
+  selectedTopic: CampusTopic;
+  openAccordion: string | null;
+  onToggle: (id: string | null) => void;
+}) {
+  const sectionPrefix = selectedFaq.id.split(".")[0];
+  const allFaqs = campusTopics.flatMap((t) => t.faqs);
+  const similar = allFaqs.filter(
+    (f) =>
+      f.id !== selectedFaq.id &&
+      f.id.startsWith(sectionPrefix + ".")
+  );
+
+  if (similar.length === 0) return null;
+
+  return (
+    <div className="mt-5 rounded-2xl border border-[#e5dfd2] bg-[#faf8f2] p-4">
+      <div className="mb-3 flex items-center gap-3">
+        <span
+          className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
+          style={{ color: selectedTopic.color }}
+        >
+          Similar Questions
+        </span>
+        <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent" />
+      </div>
+
+      <div className="space-y-2">
+        {similar.slice(0, 3).map((faq) => {
+          const isOpen = openAccordion === faq.id;
+          return (
+            <div key={faq.id} className={`sim-row${isOpen ? " open" : ""}`}>
+              <div
+                className="sim-header"
+                onClick={() => onToggle(isOpen ? null : faq.id)}
+              >
+                <span className="sim-dot" />
+                <span className="sim-question">{faq.question}</span>
+                <svg
+                  className="sim-chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="4 6 8 10 12 6" />
+                </svg>
+              </div>
+
+              <div className="sim-divider" />
+
+              <div className={`sim-body${isOpen ? " open" : ""}`}>
+                <div className="sim-content">
+                  {(() => {
+                    const tldr = getTLDR(faq);
+                    if (!tldr) {
+                      return (
+                        <p className="text-[14px] leading-relaxed font-medium text-slate-700">
+                          {faq.answer}
+                        </p>
+                      );
+                    }
+                    return (
+                      <>
+                        <div className="sim-tldr">
+                          <span className="sim-tldr-label">TL;DR</span>
+                          <p className="sim-tldr-headline">{tldr.headline}</p>
+                          {tldr.pairs.length > 0 && (
+                            <div className="sim-tldr-pairs">
+                              {tldr.pairs.map((pair, i) => (
+                                <div key={i} className="sim-tldr-pair">
+                                  <span className="sim-tldr-icon">{pair.icon}</span>
+                                  <span className="sim-tldr-pair-text">
+                                    {pair.label}: {pair.value}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {tldr.action && (
+                            <div className="sim-tldr-action">
+                              <span className="sim-tldr-icon">➡️</span>
+                              <span className="sim-tldr-pair-text">{tldr.action}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-[14px] leading-relaxed font-medium text-slate-700">
+                          {faq.answer}
+                        </p>
+                      </>
+                    );
+                  })()}
+
+                  <div className="sim-footer">
+                    <span className="sim-footer-id">
+                      {faq.id} · {selectedTopic.label}
+                    </span>
+                    <button
+                      className="sim-full-faq"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const topic = topicForFaq(faq);
+                        if (topic) {
+                          const params = new URLSearchParams();
+                          params.set("topic", topic.slug);
+                          params.set("faq", faq.id);
+                          window.location.href = `/faq?${params}`;
+                        }
+                      }}
+                    >
+                      Full FAQ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function RichAnswer({ text }: { text: string }) {
   const decoded = text
     .replace(/&lt;/g, "<")
@@ -321,6 +454,7 @@ function FAQExperience() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const sidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const answerRef = useRef<HTMLDivElement>(null);
 
@@ -560,6 +694,14 @@ function FAQExperience() {
                 </div>
               )}
               <p className="mt-5 whitespace-pre-line text-sm font-medium leading-7 text-slate-600 sm:text-[15px]"><RichAnswer text={selectedFaq.answer} /></p>
+
+              <SimilarQuestions
+                selectedFaq={selectedFaq}
+                selectedTopic={selectedTopic}
+                openAccordion={openAccordion}
+                onToggle={setOpenAccordion}
+              />
+
               <div className="mt-6 flex flex-col gap-3 border-t border-[#ebe5d9] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Verified from the Samagama FAQ</span>
                 <button onClick={copyLink} className="flex items-center gap-2 self-start rounded-full border border-[#e0dbcf] bg-white px-4 py-2 text-xs font-extrabold text-slate-600 transition hover:bg-[#f7f3eb]">

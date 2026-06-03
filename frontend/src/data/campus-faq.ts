@@ -114,7 +114,7 @@ const topicDefinitions: CampusTopicDefinition[] = [
     slug: "rosetta",
     label: "Rosetta Journal",
     section: "Rosetta — your internship journal",
-    location: { name: "Nalanda Library", x: 43, y: 49 },
+    location: { name: "Nalanda Library", x: 43, y: 57 },
     description: "Visit the journal collection for Rosetta routines, submissions, and reflection.",
     color: "#837052",
     softColor: "#f8f3ea",

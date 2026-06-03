@@ -11,6 +11,23 @@ body {
   color: rgb(var(--foreground-rgb));
   background-color: rgb(var(--background-rgb));
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-bricolage), system-ui, sans-serif;
+}
+
+.font-serif-display {
+  font-family: var(--font-dm-serif), Georgia, serif;
+}
+
+.font-sans-ui {
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+.font-heading {
+  font-family: var(--font-bricolage), system-ui, sans-serif;
 }
 
 @layer utilities {
@@ -51,10 +68,176 @@ body {
   filter: drop-shadow(0 7px 5px rgba(66, 80, 67, 0.22));
 }
 
+/* ─── Similar Questions Accordion ─── */
+.sim-row {
+  border-radius: 1rem;
+  border: 1.5px solid #e2ddd4;
+  background: #faf8f2;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.sim-row:hover {
+  border-color: #c0b8a4;
+  box-shadow: 0 4px 12px rgba(75, 83, 62, 0.08);
+}
+.sim-row.open {
+  border-color: #6e8b58;
+  box-shadow: 0 5px 18px rgba(110, 139, 88, 0.1);
+}
+
+.sim-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sim-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  border-radius: 50%;
+  border: 2px solid #6e8b58;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.sim-row.open .sim-dot {
+  background: #6e8b58;
+}
+
+.sim-question {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #293d36;
+  line-height: 1.4;
+}
+
+.sim-chevron {
+  flex-shrink: 0;
+  color: #a09888;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s;
+}
+.sim-row.open .sim-chevron {
+  transform: rotate(180deg);
+  color: #6e8b58;
+}
+
+.sim-divider {
+  border-top: 1px dashed #e2ddd4;
+  margin: 0 15px;
+}
+
+.sim-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.36s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sim-body.open {
+  grid-template-rows: 1fr;
+}
+.sim-content {
+  overflow: hidden;
+  padding: 0 15px;
+}
+.sim-row.open .sim-content {
+  padding: 12px 15px 14px;
+}
+
+/* TLDR inside accordion */
+.sim-tldr {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #f3e4b0;
+  background: #fffdf5;
+  padding: 8px 10px;
+}
+.sim-tldr-label {
+  display: block;
+  font-family: var(--font-dm-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #b45309;
+  margin-bottom: 3px;
+}
+.sim-tldr-headline {
+  font-size: 13px;
+  font-weight: 700;
+  color: #92400e;
+  line-height: 1.4;
+}
+.sim-tldr-pairs {
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sim-tldr-pair {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a35200;
+}
+.sim-tldr-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sim-tldr-pair-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #7c2d0a;
+}
+.sim-tldr-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a35200;
+}
+
+.sim-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f0ebe0;
+}
+.sim-footer-id {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #bbb;
+}
+.sim-full-faq {
+  font-size: 10px;
+  font-weight: 800;
+  color: #888;
+  transition: color 0.15s;
+}
+.sim-full-faq:hover {
+  color: #3d4a3e;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .faq-cloud {
     animation: none;
   }
+
+  .sim-body { transition: none; }
+  .sim-chevron { transition: none; }
 
   *,
   *::before,
