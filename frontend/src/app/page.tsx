@@ -200,7 +200,7 @@ export default function AskDoubtsPage() {
 
                   {/* High Confidence direct answer */}
                   {response.confidence === 'high' && response.ai_answer ? (
-                    <div className="text-slate-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-medium pr-1">
+                    <div className="text-slate-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-answer pr-1">
                       {response.ai_answer}
                     </div>
                   ) : (
@@ -214,8 +214,8 @@ export default function AskDoubtsPage() {
                       <div className="space-y-2">
                         {response.faq_matches.slice(0, 2).map((match: any, idx: number) => (
                           <div key={match.id} className="bg-slate-50 border border-slate-150 p-3.5 rounded-xl space-y-1.5">
-                            <h5 className="text-xs font-bold text-slate-800 leading-snug">{match.question}</h5>
-                            <p className="text-[11px] text-slate-500 leading-relaxed">{match.answer}</p>
+                            <h5 className="text-sm font-bold text-slate-800 leading-snug">{match.question}</h5>
+                            <p className="text-xs text-slate-700 leading-relaxed font-answer">{match.answer}</p>
                           </div>
                         ))}
                       </div>

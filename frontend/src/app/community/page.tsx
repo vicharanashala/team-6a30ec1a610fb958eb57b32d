@@ -1,315 +1,270 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { fetchThreads, fetchCategories, createThread } from '../../services/api';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { 
-  MessageSquare, 
-  Plus, 
-  HelpCircle, 
-  CheckCircle2, 
-  AlertTriangle,
-  Folder,
-  Search,
-  Bot,
-  UserCheck,
-  X
-} from 'lucide-react';
+import { useMemo, useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Search, Plus, X } from "lucide-react";
+import { campusTopics } from "../../data/campus-faq";
+import { getAllThreads, createThread } from "./store";
+import type { StoredThread } from "./store";
+import type { ForumView } from "./types";
+
+function relativeTime(raw: number): string {
+  const diff = Date.now() - raw;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(raw).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`{1,3}[^`]*`{1,3}/g, "")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/>\s+/g, "")
+    .replace(/[-*+]\s+/g, "")
+    .replace(/\n{2,}/g, " ")
+    .trim();
+}
+
+function excerpt(text: string, max = 130): string {
+  const plain = stripMarkdown(text);
+  return plain.length > max ? plain.slice(0, max).trimEnd() + "…" : plain;
+}
 
 export default function CommunityPage() {
   const router = useRouter();
-  const [threads, setThreads] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  // Minimal create thread form state
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [doubtText, setDoubtText] = useState('');
-  const [formCategory, setFormCategory] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
+  const [threads, setThreads] = useState<StoredThread[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<ForumView>("latest");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const loadThreads = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchThreads(
-        selectedCategory || undefined, 
-        'recent', 
-        searchQuery.trim() || undefined
-      );
-      setThreads(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [newCategory, setNewCategory] = useState("");
 
-  useEffect(() => {
-    loadThreads();
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    fetchCategories().then(setCategories).catch(console.error);
+  const loadThreads = useCallback(() => {
+    setThreads(getAllThreads());
   }, []);
 
-  // Live search debounce
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      loadThreads();
-    }, 400);
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  useEffect(() => { loadThreads(); }, [loadThreads]);
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
+  const categories = useMemo(() => {
+    const general = { slug: "general", label: "General", description: "General discussion", color: "#888", softColor: "#f0f0f0", topicCount: threads.filter((th) => th.categorySlug === "general").length };
+    return [general, ...campusTopics.map((t) => ({
+      slug: t.slug,
+      label: t.label,
+      description: t.description,
+      color: t.color,
+      softColor: t.softColor,
+      topicCount: threads.filter((th) => th.categorySlug === t.slug).length,
+    }))];
+  }, [threads]);
+
+  const filteredThreads = useMemo(() => {
+    let result = threads;
+    if (activeCategory) {
+      result = result.filter((t) => t.categorySlug === activeCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q) || t.content.toLowerCase().includes(q));
+    }
+    result = result.sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+      return b.createdAt - a.createdAt;
+    });
+    return result;
+  }, [threads, activeCategory, searchQuery]);
+
+  const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!doubtText.trim() || !formCategory) {
-      setFormError('Please fill in all fields.');
-      return;
-    }
-
-    setLoading(true);
-    setFormError(null);
-
-    try {
-      // Auto generate a short title from the doubt description
-      const generatedTitle = doubtText.trim().length > 50 
-        ? `${doubtText.trim().slice(0, 50)}...` 
-        : doubtText.trim();
-        
-      const newThread = await createThread(generatedTitle, doubtText.trim(), formCategory, []);
-      
-      setDoubtText('');
-      setFormCategory('');
-      setShowCreateForm(false);
-      
-      // Immediately redirect the student to the active chat screen
-      router.push(`/community/${newThread.id}`);
-    } catch (err: any) {
-      console.error(err);
-      setFormError('Failed to start a new chat. Make sure you are logged in.');
-    } finally {
-      setLoading(false);
-    }
+    if (!newTitle.trim() || !newContent.trim()) return;
+    createThread(newTitle.trim(), newContent.trim(), "Student", newCategory || "general", []);
+    setNewTitle("");
+    setNewContent("");
+    setNewCategory("");
+    setShowCreate(false);
+    loadThreads();
   };
 
+  const handleViewChange = useCallback((view: ForumView) => {
+    setActiveView(view);
+  }, []);
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 font-sans max-w-3xl mx-auto pb-12">
-      
-      {/* Sleek Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 p-6 rounded-3xl shadow-xs">
-        <div className="space-y-1">
-          <h2 className="text-lg font-extrabold text-slate-900 flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5 text-indigo-650" />
-            <span>Support Chat Hub</span>
-          </h2>
-          <p className="text-xs text-slate-500 max-w-sm">
-            Chat with the automated assistant, and escalate to our human mentor queue if you need live staff assistance.
-          </p>
+    <div className="forum-root">
+      <header className="forum-header">
+        <div className="forum-header-left">
+          <div className="forum-logo">Sama<span>gama</span></div>
         </div>
-
-        <button
-          onClick={() => {
-            setShowCreateForm(true);
-            setFormError(null);
-          }}
-          className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-2.5 px-4.5 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer select-none self-start sm:self-center"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Doubt Chat</span>
-        </button>
-      </div>
-
-      {/* Simplified Doubt Chat List & Filter */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search doubt tickets..."
-            className="w-full bg-white border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-650 focus:ring-1 focus:ring-indigo-650/15 transition-colors"
-          />
+        <div className="forum-path">
+          <span>{activeCategory ? categories.find((c) => c.slug === activeCategory)?.label ?? "Category" : "All topics"}</span>
+          {activeCategory && (
+            <>
+              <span className="forum-path-sep">/</span>
+              <span className="forum-path-label">{filteredThreads.length} topics</span>
+            </>
+          )}
         </div>
-
-        {/* Category quick dropdown selector */}
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="bg-white border border-slate-200 text-slate-500 font-bold text-xs px-3 py-2.5 rounded-xl focus:outline-none focus:border-indigo-650 cursor-pointer select-none"
-        >
-          <option value="">ALL TOPICS</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.slug}>{c.name.toUpperCase()}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Doubt tickets Feed */}
-      {loading && threads.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 space-y-2">
-          <div className="h-6 w-6 border-2 border-indigo-500/10 border-t-indigo-650 rounded-full animate-spin" />
-          <p className="text-[10px] font-medium text-slate-400">Loading timeline...</p>
+        <div className="forum-user">
+          <span className="forum-user-label">A</span>
+          <div className="forum-avatar">AP</div>
         </div>
-      ) : threads.length > 0 ? (
-        <div className="space-y-2.5">
-          {threads.map((thread) => {
-            const isResolved = thread.status === 'resolved';
-            const isEscalated = thread.status === 'escalated';
-            const studentName = thread.user_email ? thread.user_email.split('@')[0] : 'student';
-            
-            return (
-              <Link
-                key={thread.id}
-                href={`/community/${thread.id}`}
-                className="block bg-white border border-slate-200/80 hover:border-slate-300 p-4.5 rounded-2xl transition-all duration-150 group relative shadow-xs"
+      </header>
+
+      <div className="forum-wrap">
+        <nav className="forum-index">
+          <div className="forum-index-section">
+            <div className="forum-index-head">Categories</div>
+            {categories.map((cat) => (
+              <button
+                key={cat.slug}
+                onClick={() => setActiveCategory((prev) => (prev === cat.slug ? null : cat.slug))}
+                className={`forum-index-link ${activeCategory === cat.slug ? "active" : ""}`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1.5 min-w-0">
-                    
-                    {/* Simplified Metadata Header */}
-                    <div className="flex items-center space-x-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                      <span className="text-slate-550">{studentName}</span>
-                      <span>•</span>
-                      <span>{new Date(thread.created_at).toLocaleDateString()}</span>
-                      {thread.category_name && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center space-x-0.5 text-slate-400">
-                            <Folder className="h-2.5 w-2.5" />
-                            <span>{thread.category_name}</span>
-                          </span>
-                        </>
-                      )}
-                    </div>
+                <span className="forum-index-dot" style={{ backgroundColor: cat.color }} />
+                {cat.label}
+                <span className="forum-index-count">{cat.topicCount}</span>
+              </button>
+            ))}
+          </div>
+          <div className="forum-index-section">
+            <div className="forum-index-head">Views</div>
+            {(["latest", "new", "votes", "top"] as ForumView[]).map((v) => (
+              <button
+                key={v}
+                onClick={() => handleViewChange(v)}
+                className={`forum-index-link capitalize ${activeView === v ? "active" : ""}`}
+              >
+                {v === "latest" ? "Latest" : v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
+        </nav>
 
-                    {/* Doubt details */}
-                    <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 group-hover:text-indigo-650 transition-colors leading-snug truncate">
-                      {thread.content}
-                    </h3>
+        <div className="forum-main">
+          <div className="topic-head">
+            <div className="topic-tag">{activeCategory ? categories.find((c) => c.slug === activeCategory)?.label ?? "Category" : "Community"}</div>
+            <div className="flex items-center justify-between gap-4">
+              <h1 className="topic-title">
+                {activeCategory ? categories.find((c) => c.slug === activeCategory)?.label ?? "Topics" : "All topics"}
+              </h1>
+              <button
+                onClick={() => setShowCreate(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--forum-border)] px-3 py-1.5 text-sm font-medium text-[var(--forum-text2)] transition hover:bg-[var(--forum-surface)] hover:text-[var(--forum-accent)]"
+              >
+                <Plus size={15} />
+                New Thread
+              </button>
+            </div>
+            <div className="topic-meta">
+              {filteredThreads.length} {filteredThreads.length === 1 ? "topic" : "topics"}
+              <span className="topic-meta-sep">·</span>
+              Sorted by {activeView}
+            </div>
+          </div>
+
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--forum-text4)]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search topics…"
+              className="w-full border border-[var(--forum-border)] rounded-lg bg-transparent pl-10 pr-4 py-2 text-sm text-[var(--forum-text)] placeholder:text-[var(--forum-text4)] outline-none transition focus:border-[var(--forum-accent)]"
+            />
+          </div>
+
+          {filteredThreads.length === 0 ? (
+            <div className="forum-empty"><p>{searchQuery ? "No matching topics" : "No topics yet"}</p></div>
+          ) : (
+            filteredThreads.map((thread) => (
+              <div
+                key={thread.id}
+                className="topic-row"
+                onClick={() => router.push(`/community/${thread.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter") router.push(`/community/${thread.id}`); }}
+              >
+                <div className="tr-main">
+                  <div className="tr-title-line">
+                    {thread.isPinned && <span className="tr-pin">Pinned</span>}
+                    <span className="tr-title">{thread.title}</span>
                   </div>
-
-                  {/* Sleek Ticket status badge */}
-                  <div className="flex-shrink-0 self-center">
-                    {isResolved ? (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        <CheckCircle2 className="h-3 w-3" />
-                        <span>RESOLVED</span>
-                      </span>
-                    ) : isEscalated ? (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-100 animate-pulse">
-                        <UserCheck className="h-3 w-3" />
-                        <span>MENTOR JOINED</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[9px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
-                        <Bot className="h-3 w-3" />
-                        <span>AI ANSWERED</span>
-                      </span>
-                    )}
+                  <p className="tr-excerpt">{excerpt(thread.content)}</p>
+                  <div className="tr-tags">
+                    <span className="tr-tag">{thread.author}</span>
+                    {thread.tags.slice(0, 2).map((tag) => (
+                      <span key={tag} className="tr-tag">{tag}</span>
+                    ))}
                   </div>
                 </div>
-              </Link>
-            );
-          })}
+                <div className="tr-stats">
+                  <div className="tr-stat">{thread.replies.length}</div>
+                  <div className="tr-stat views">{thread.viewCount >= 1000 ? `${(thread.viewCount / 1000).toFixed(1)}k` : thread.viewCount}</div>
+                  <div className="tr-stat activity">{relativeTime(thread.createdAt)}</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      ) : (
-        <div className="bg-white border border-slate-200/85 rounded-3xl p-16 text-center shadow-xs">
-          <MessageSquare className="h-8 w-8 text-slate-350 mx-auto mb-2.5" />
-          <p className="text-xs font-bold text-slate-700">No active doubt chats</p>
-          <p className="text-[10px] text-slate-450 max-w-xs mx-auto mt-1 mb-4 leading-relaxed">
-            Have a question about NOC, badges, or certificates? Open a chat and get instant responses.
-          </p>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="bg-slate-900 hover:bg-slate-850 text-white font-semibold text-xs py-2 px-4.5 rounded-xl shadow-xs transition-colors"
-          >
-            Start Doubt Chat
-          </button>
-        </div>
-      )}
+      </div>
 
-      {/* ULTRA SIMPLIFIED NEW DOUBT CHAT DIALOG MODAL */}
-      {showCreateForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/15 backdrop-blur-xs animate-in fade-in duration-200">
-          <div 
-            onClick={() => setShowCreateForm(false)} 
-            className="absolute inset-0 z-0"
-          />
-          <form 
-            onSubmit={handleCreateSubmit} 
-            className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 animate-in scale-in-95 duration-150"
-          >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wide">Start a Doubt Chat</h3>
-              <button 
-                type="button"
-                onClick={() => setShowCreateForm(false)} 
-                className="h-8 w-8 rounded-lg hover:bg-slate-150 text-slate-400 hover:text-slate-700 flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <X className="h-4.5 w-4.5" />
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 p-4">
+          <div className="absolute inset-0" onClick={() => setShowCreate(false)} />
+          <form onSubmit={handleCreate} className="relative w-full max-w-lg rounded-xl border border-[var(--forum-border)] bg-[var(--forum-bg)] p-6 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-[var(--forum-text)]">Create a new thread</h2>
+              <button type="button" onClick={() => setShowCreate(false)} className="text-[var(--forum-text4)] transition hover:text-[var(--forum-text2)]">
+                <X size={18} />
               </button>
             </div>
-            
-            {formError && (
-              <div className="bg-rose-50 border border-rose-100 text-rose-600 p-2.5 rounded-lg text-[10px] font-bold text-center">
-                {formError}
-              </div>
-            )}
-
-            <div className="space-y-3.5">
-              <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-1 pl-0.5">Doubt Topic</label>
-                <select
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-655 p-3 rounded-xl focus:outline-none focus:border-indigo-650 text-xs font-bold cursor-pointer"
-                  required
-                >
-                  <option value="">Select Topic...</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-450 mb-1 pl-0.5">What is your doubt?</label>
-                <textarea
-                  value={doubtText}
-                  onChange={(e) => setDoubtText(e.target.value)}
-                  placeholder="Describe what you need help with in detail..."
-                  rows={5}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-650/15 focus:border-indigo-650 text-xs font-medium resize-none leading-relaxed placeholder:text-slate-400"
-                  required
-                />
-              </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Thread title"
+                required
+                className="w-full rounded-lg border border-[var(--forum-border)] bg-transparent px-3 py-2 text-sm text-[var(--forum-text)] placeholder:text-[var(--forum-text4)] outline-none transition focus:border-[var(--forum-accent)]"
+              />
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full rounded-lg border border-[var(--forum-border)] bg-transparent px-3 py-2 text-sm text-[var(--forum-text)] outline-none transition focus:border-[var(--forum-accent)]"
+              >
+                <option value="">Select category</option>
+                <option value="general">General</option>
+                {campusTopics.map((t) => (
+                  <option key={t.slug} value={t.slug}>{t.label}</option>
+                ))}
+              </select>
+              <textarea
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                placeholder="Write your post…"
+                rows={5}
+                required
+                className="w-full rounded-lg border border-[var(--forum-border)] bg-transparent px-3 py-2 text-sm text-[var(--forum-text)] placeholder:text-[var(--forum-text4)] outline-none transition focus:border-[var(--forum-accent)] resize-y"
+              />
+              <p className="text-[11px] text-[var(--forum-text4)]">Markdown supported: **bold**, *italic*, `code`, [links](url), lists</p>
             </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="w-1/2 bg-slate-100 hover:bg-slate-150 text-slate-600 text-xs font-semibold py-3 rounded-xl transition-colors cursor-pointer select-none"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-1/2 bg-slate-900 hover:bg-slate-850 text-white text-xs font-semibold py-3 rounded-xl shadow-md shadow-slate-900/5 transition-colors cursor-pointer select-none"
-              >
-                {loading ? 'Creating...' : 'Start Chat'}
-              </button>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setShowCreate(false)} className="rounded-lg border border-[var(--forum-border)] px-4 py-1.5 text-sm text-[var(--forum-text3)] transition hover:bg-[var(--forum-surface)]">Cancel</button>
+              <button type="submit" disabled={!newTitle.trim() || !newContent.trim()} className="rounded-lg bg-[var(--forum-accent)] px-4 py-1.5 text-sm font-medium text-white transition disabled:opacity-50">Post Thread</button>
             </div>
           </form>
         </div>
       )}
-
     </div>
   );
 }
