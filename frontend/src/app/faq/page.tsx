@@ -63,6 +63,64 @@ const iconMap = {
 
 const tldrCache: Record<string, TLDR | null> = {};
 
+// ─── Pinch-zoom state (stored in refs — no re-renders during gestures) ───
+function usePinchZoom() {
+  const scaleRef = useRef(1);
+  const lastPinchRef = useRef<number | null>(null);
+
+  function attachZoom(el: HTMLElement) {
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.08 : 0.08;
+      const next = Math.min(Math.max(scaleRef.current + delta, 0.8), 3);
+      scaleRef.current = next;
+      applyTransform(el, scaleRef.current);
+    }
+
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length === 2) {
+        lastPinchRef.current = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (e.touches.length !== 2 || lastPinchRef.current === null) return;
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const delta = (dist - lastPinchRef.current) * 0.005;
+      const next = Math.min(Math.max(scaleRef.current + delta, 0.8), 3);
+      scaleRef.current = next;
+      applyTransform(el, scaleRef.current);
+      lastPinchRef.current = dist;
+    }
+    function onTouchEnd() { lastPinchRef.current = null; }
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }
+
+  return attachZoom;
+}
+
+function applyTransform(el: HTMLElement, scale: number) {
+  el.style.transform = `scale(${scale})`;
+  el.style.transformOrigin = "center center";
+}
+
 function getTLDR(faq: FAQEntry): TLDR | null {
   if (!(faq.id in tldrCache)) {
     tldrCache[faq.id] = generateTLDR(faq);
@@ -316,18 +374,31 @@ function CampusIllustration({
   onSelect?: (topic: CampusTopic) => void;
   compact?: boolean;
 }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const attachZoom = usePinchZoom();
+
+  useEffect(() => {
+    if (mapRef.current) {
+      return attachZoom(mapRef.current);
+    }
+  }, [attachZoom]);
+
   return (
-    <div className={`relative overflow-hidden rounded-[2rem] border border-[#d9dccd] bg-[#f4f2e6] shadow-[0_24px_70px_rgba(75,83,62,0.12)] ${compact ? "h-44" : "h-[620px]"}`}>
+    <div
+      ref={mapRef}
+      className={`relative overflow-hidden rounded-[2rem] border border-[#d9dccd] bg-[#f4f2e6] shadow-[0_24px_70px_rgba(75,83,62,0.12)] touch-pan-x ${compact ? "h-44 md:h-[620px]" : "h-[60vh] md:h-[620px]"}`}
+      style={{ willChange: "transform" }}
+    >
       <Image
         src="/iit-ropar-faq-map.png"
         alt="Illustrated map of IIT Ropar campus knowledge locations"
         fill
         unoptimized
         priority={!compact}
-        sizes={compact ? "100vw" : "(min-width: 768px) 1152px, 100vw"}
+        sizes="100vw"
         className="h-full w-full object-cover"
       />
-      {!compact && onSelect && (
+      {onSelect && (
         <div className="absolute inset-0">
           {campusTopics.map((topic) => {
             const Icon = iconFor(topic);
@@ -337,25 +408,36 @@ function CampusIllustration({
                 key={topic.slug}
                 aria-label={`${topic.label}, ${topic.faqs.length} questions`}
                 onClick={() => onSelect(topic)}
-                className={`campus-hotspot group absolute flex w-40 flex-col items-center outline-none ${isSelected ? "is-selected" : ""}`}
+                className={`campus-hotspot group absolute flex flex-col items-center outline-none ${isSelected ? "is-selected" : ""}`}
                 style={{ left: `${topic.location.x}%`, top: `${topic.location.y}%`, transform: "translate(-50%, -50%)" }}
               >
+                {/* Icon — touch target ≥ 44px on mobile */}
                 <span
-                  className="flex h-12 w-12 items-center justify-center rounded-full border-[3px] bg-[#fffdf8] shadow-sm transition group-hover:scale-110 group-focus:scale-110"
-                  style={{ borderColor: topic.color, color: topic.color }}
+                  className="flex items-center justify-center rounded-full border-[3px] bg-[#fffdf8] shadow-sm transition group-hover:scale-110 group-focus:scale-110"
+                  style={{
+                    borderColor: topic.color,
+                    color: topic.color,
+                    width: "clamp(40px, 8vw, 48px)",
+                    height: "clamp(40px, 8vw, 48px)",
+                  }}
                 >
-                  <Icon size={19} strokeWidth={2.5} />
+                  <Icon size={compact ? 15 : 19} strokeWidth={2.5} />
                 </span>
-                <span className="mt-1 w-full rounded-xl border border-[#ded8c9] bg-[#fffdf9]/95 px-2 py-1 text-center shadow-sm backdrop-blur-sm">
-                  <span className="block truncate text-[11px] font-extrabold leading-4 text-[#31413a]">{topic.label}</span>
-                  <span className="block text-[10px] font-semibold leading-3 text-[#748078]">{topic.faqs.length} questions</span>
+                {/* Label — collapses gracefully on small screens */}
+                <span className="mt-1 hidden w-full min-w-0 rounded-xl border border-[#ded8c9] bg-[#fffdf9]/95 px-1.5 py-1 text-center shadow-sm backdrop-blur-sm sm:block">
+                  <span className="block truncate text-[10px] font-extrabold leading-3 text-[#31413a] md:text-[11px] md:leading-4">
+                    {topic.label}
+                  </span>
+                  <span className="block hidden text-[9px] font-semibold leading-2 text-[#748078] md:block">
+                    {topic.faqs.length} qs
+                  </span>
                 </span>
               </button>
             );
           })}
         </div>
       )}
-      <div className="pointer-events-none absolute left-5 top-5 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#647468] shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute left-4 top-4 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#647468] shadow-sm backdrop-blur md:left-5 md:top-5 md:text-[10px] md:px-4 md:py-2">
         IIT Ropar Knowledge Map
       </div>
     </div>
@@ -584,9 +666,12 @@ function FAQExperience() {
 
         {!selectedTopic ? (
           <>
+            {/* Map: always interactive, full height on mobile, desktop height on md+ */}
             <div className="hidden md:block"><CampusIllustration onSelect={chooseTopic} /></div>
-            <div className="md:hidden"><CampusIllustration compact /></div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 md:hidden">
+            <div className="md:hidden">
+              <CampusIllustration onSelect={chooseTopic} />
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 md:hidden">
               {campusTopics.map((topic) => {
                 const Icon = iconFor(topic);
                 return (
@@ -601,7 +686,8 @@ function FAQExperience() {
           </>
         ) : (
           <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] border border-[#dfddd2] bg-[#f2f4e8] p-4 shadow-[0_24px_70px_rgba(75,83,62,0.12)] sm:p-6">
-            <div className="absolute inset-0 opacity-25"><CampusIllustration selectedTopic={selectedTopic} compact /></div>
+            {/* Background map strip on desktop (visible but dimmed) */}
+            <div className="absolute inset-0 opacity-[0.15] hidden md:block"><CampusIllustration selectedTopic={selectedTopic} compact /></div>
             <div className="relative z-10">
               <div className="flex flex-col gap-4 rounded-[1.5rem] border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
@@ -615,7 +701,45 @@ function FAQExperience() {
                 <span className="self-start whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-extrabold" style={{ color: selectedTopic.color, backgroundColor: selectedTopic.softColor }}>{selectedTopic.faqs.length} verified answers</span>
               </div>
 
-              <div className="relative mt-5 min-h-[530px] space-y-3 md:space-y-0">
+              {/* Mobile: tappable FAQ card list */}
+              <div className="mt-5 space-y-3 md:hidden">
+                {visibleFaqs.map((faq) => (
+                  <button
+                    key={faq.id}
+                    onClick={() => chooseFaq(faq)}
+                    className={`w-full rounded-2xl border border-[#e5dfd2] bg-white/95 p-4 text-left shadow-sm transition active:scale-[0.98] ${
+                      selectedFaq && selectedFaq.id !== faq.id ? "opacity-50" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wider" style={{ color: selectedTopic.color }}>
+                        {faq.id}
+                      </span>
+                      <span className="text-xs text-slate-400 font-medium">
+                        {selectedTopic.label}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-bold leading-5 text-slate-700 line-clamp-2">
+                      {faq.question}
+                    </p>
+                    {/* Show truncated answer on mobile */}
+                    <p className="mt-2 line-clamp-2 text-xs text-slate-500 leading-relaxed font-answer">
+                      {faq.answer.replace(/<[^>]+>/g, "").replace(/\*\*/g, "").slice(0, 120)}...
+                    </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                        Tap to read more
+                      </span>
+                      <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                        <BookOpen className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Desktop: floating cloud bubbles */}
+              <div className="relative mt-5 hidden min-h-[530px] md:block">
                 {visibleFaqs.map((faq, index) => (
                   <motion.button
                     key={faq.id}
@@ -623,7 +747,9 @@ function FAQExperience() {
                     animate={{ opacity: selectedFaq && selectedFaq.id !== faq.id ? 0.4 : 1, scale: 1, y: 0 }}
                     transition={{ delay: index * 0.045 }}
                     onClick={() => chooseFaq(faq)}
-                    className={`faq-cloud relative block w-full rounded-[1.75rem] border border-white/90 bg-white/90 p-4 text-left shadow-[0_14px_30px_rgba(80,90,76,0.12)] transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-white/80 md:absolute md:w-[29%] ${cloudPositions[index]}`}
+                    className={`faq-cloud absolute w-[29%] rounded-[1.75rem] border border-white/90 bg-white/90 p-4 text-left shadow-[0_14px_30px_rgba(80,90,76,0.12)] transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-white/80 ${
+                      cloudPositions[index]
+                    }`}
                     style={{ animationDelay: `${index * -0.7}s` }}
                   >
                     <span className="block text-[10px] font-extrabold uppercase tracking-wider" style={{ color: selectedTopic.color }}>{faq.id}</span>
