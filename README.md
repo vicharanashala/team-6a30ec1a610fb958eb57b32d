@@ -1,487 +1,396 @@
-# AI-Powered Internship Help Platform — Full MVP Build Prompt
+<div align="center">
 
+# 🎓 Samagama FAQ — Knowledge OS
+### AI-Powered Internship Help Platform · IIT Ropar / Vicharanashala
 
-- Samagama FAQ Maps Version : [Samagama FAQ](https://samagama-faq-alpha.vercel.app/)
+**[Live Demo →](https://samagama-faq-alpha.vercel.app/)**
 
-  
-You are a senior staff-level AI architect, full-stack engineer, product designer, database architect, and scalable systems engineer.
-Your task is to help me build a production-grade MVP for an AI-powered internship help platform for the Vicharanashala Internship (IIT Ropar).
-The system should reduce admin workload by combining:
+![Next.js](https://img.shields.io/badge/Next.js_14-black?style=for-the-badge&logo=next.js)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)
 
-* Semantic FAQ search
-* AI-assisted retrieval
-* Community-driven support
-* Verified knowledge moderation
-* Smart escalation workflows
-* Continuous knowledge evolution
-
-The goal is NOT to build a generic chatbot.
-
-The goal is to build:
-“A self-evolving AI + community-powered knowledge operating system.”
+</div>
 
 ---
 
-## PROJECT CONTEXT
+## What is this?
 
-Currently the system has:
+Samagama FAQ is a self-evolving, AI + community-powered knowledge operating system built for the [Vicharanashala Internship](https://vicharanashala.org/) at IIT Ropar. It replaces the old static FAQ page and chaotic #escalate workflow with a layered system that gets smarter every day:
 
-1. A static FAQ website
-2. A basic FAQ-only chatbot
-3. Manual escalation using #escalate
-
-Problem:
-
-* Repeated questions
-* Duplicate escalations
-* Heavy admin workload
-* Poor scalability
-* No reusable community knowledge
-* No continuous improvement
-
-The system must:
-
-* Prevent duplicate escalations
-* Answer questions using semantic retrieval
-* Convert unresolved questions into community discussions
-* Allow verified answers to evolve into official knowledge
-* Continuously improve retrieval quality
+- **Semantic FAQ search** — vector embeddings find the right answer even when the wording differs
+- **RAG AI assistant** — Gemini answers questions using only verified content, never hallucinating
+- **Community discussions** — Reddit/StackOverflow-style threads with upvotes, accepted answers, and mentor badges
+- **Smart escalation** — admin queue is a last resort, not the first one
+- **Knowledge promotion** — resolved escalations can become official FAQs in one click
 
 ---
 
-## TECH STACK (STRICT)
+## Architecture
 
-Frontend:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (Next.js 14)                    │
+│                                                                 │
+│  /           → Ask AI (RAG chatbot + flip card UI)             │
+│  /faq        → Smart FAQ browser (semantic search + TLDR)      │
+│  /community  → Discussion threads (localStorage store)         │
+│  /admin      → Escalation queue + analytics dashboard          │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ REST (JSON)
+                            │ Bearer token (Supabase JWT)
+┌───────────────────────────▼─────────────────────────────────────┐
+│                       BACKEND (FastAPI)                         │
+│                                                                 │
+│  /api/auth        → Profile sync & JWT validation              │
+│  /api/faqs        → List / semantic search FAQs                │
+│  /api/ai          → RAG pipeline endpoint                      │
+│  /api/threads     → CRUD threads, replies, votes               │
+│  /api/escalations → Escalation queue (Mentor/Admin only)       │
+│  /api/analytics   → Query stats & community health             │
+└──────────┬────────────────────────────┬────────────────────────┘
+           │ REST (PostgREST)           │ Gemini API
+┌──────────▼────────────────┐  ┌───────▼─────────────────────────┐
+│    Supabase (Postgres)    │  │       Google Gemini              │
+│                           │  │                                  │
+│  users                    │  │  gemini-embedding-001            │
+│  faqs + faq_embeddings    │  │  → 768-dim vectors               │
+│  threads + thread_emb.    │  │                                  │
+│  replies, votes           │  │  gemini-2.5-flash                │
+│  escalations              │  │  → RAG answer generation         │
+│  analytics                │  │                                  │
+│  categories               │  └──────────────────────────────────┘
+│  knowledge_base           │
+│  pgvector extension       │
+└───────────────────────────┘
+```
 
-* Next.js 14 App Router
-* React
-* TailwindCSS
-* shadcn/ui
+### How a question flows through the system
 
-Backend:
+```
+User submits question
+        │
+        ▼
+  Embed with Gemini ──► (fails?) ──► difflib string-match fallback
+        │
+        ▼
+  pgvector cosine similarity search
+  ├── match_faqs RPC
+  └── match_threads RPC
+        │
+        ▼
+  Confidence routing
+  ├── ≥ 0.70 → HIGH   → Generate RAG answer via Gemini 2.5 Flash
+  ├── 0.40–0.70 → MED → Show related FAQs + related threads
+  └── < 0.40  → LOW   → Prompt user to post a community thread
+        │
+        ▼
+  Duplicate detection
+  └── thread similarity ≥ 0.92 → Flag as duplicate, link existing thread
+        │
+        ▼
+  Log to analytics table
+```
 
-* FastAPI (Python)
+### RAG Pipeline (no hallucination guarantee)
 
-Database:
+1. Retrieve top-k matches from `faq_embeddings` + `thread_embeddings` via pgvector
+2. Build a context block from verified FAQ answers and accepted community replies
+3. Send context + question to Gemini with strict instructions:
+   - Answer **only** from context
+   - Cite source (`[FAQ: …]`)
+   - If uncertain → say so, don't guess
+4. If Gemini is unavailable → extract first answer from context text (zero-API fallback)
 
-* Supabase PostgreSQL
+### Knowledge promotion loop
 
-Vector Search:
-
-* pgvector extension in Supabase
-
-Authentication:
-
-* Supabase Auth
-
-AI:
-
-* OpenAI embeddings OR Gemini embeddings
-* RAG-based retrieval ONLY
-* NO fine-tuning initially
-
-Deployment:
-
-* Vercel (frontend)
-* Railway or Render (backend)
-
----
-
-## VERY IMPORTANT ARCHITECTURE RULES
-
-1. DO NOT overengineer.
-2. DO NOT use multi-agent systems.
-3. DO NOT use LangGraph initially.
-4. DO NOT use autonomous workflows.
-5. Build MVP-first.
-6. Prioritize retrieval quality over AI complexity.
-7. Keep the frontend modern but simple.
-8. Use clean architecture.
-9. Everything should be modular.
-10. Write production-quality code.
-
----
-
-## MAIN SYSTEM FLOW
-
-User asks question
-↓
-Semantic search over:
-
-* FAQ database
-* Verified community answers
-* Approved discussions
-  ↓
-  Confidence scoring
-  ↓
-
-IF confidence > 85%
-→ AI answers directly
-
-IF confidence between 60–85%
-→ Show related FAQs + related discussions
-
-IF confidence < 60%
-→ Create community discussion thread
-
-IF unresolved for long time
-→ Escalation queue
-
-Verified answers:
-→ become part of knowledge base
-→ become searchable
-→ improve future retrieval
-
----
-
-## PAGES TO BUILD
-
-PAGE 1 — SMART FAQ
-
-Features:
-
-* Semantic FAQ search
-* Category filtering
-* Popular questions
-* Related question suggestions
-* Helpful / not helpful buttons
-* Mobile responsive UI
-
-FAQ categories:
-
-* NOC
-* Internship
-* Offer Letter
-* ViBe
-* Technical Issues
-* Certificates
-* General
+```
+Unresolved thread
+   → escalated to admin queue
+      → admin reviews + writes resolution
+         → "Convert to FAQ" checkbox
+            → new FAQ inserted + embedded
+               → searchable in next query
+```
 
 ---
 
-PAGE 2 — ASK AI
+## Project structure
 
-Features:
-
-* Ask question input
-* Semantic similarity detection
-* Duplicate question prevention
-* AI-generated answers using RAG
-* Similar discussions recommendation
-* Confidence-aware responses
-
-IMPORTANT:
-The chatbot must NEVER hallucinate.
-The chatbot must answer ONLY using retrieved context.
-
----
-
-PAGE 3 — COMMUNITY DISCUSSIONS
-
-Features:
-
-* Reddit/StackOverflow-like threads
-* Replies
-* Upvotes
-* Accepted answers
-* Verified mentor answers
-* Tags
-* Thread search
-* Sort by:
-
-  * Recent
-  * Popular
-  * Unresolved
-  * Most discussed
-
----
-
-PAGE 4 — ADMIN DASHBOARD
-
-Features:
-
-* Moderate threads
-* Approve answers
-* Escalation queue
-* Analytics
-* FAQ generation suggestions
-* Most repeated questions
-* Most escalated topics
-* User reports
-* Community health metrics
-
----
-
-## DATABASE DESIGN
-
-Generate full PostgreSQL schema for:
-
-users
-faqs
-faq_embeddings
-threads
-thread_embeddings
-replies
-votes
-accepted_answers
-escalations
-notifications
-categories
-tags
-thread_tags
-analytics
-moderation_logs
-knowledge_base
-
-Use:
-
-* UUID primary keys
-* timestamps
-* indexing
-* pgvector embeddings
-* proper foreign keys
+```
+samagama-faq/
+├── backend/
+│   ├── .env                    # Runtime secrets (gitignored)
+│   ├── .env.example            # Template — copy to .env and fill in
+│   ├── requirements.txt
+│   └── app/
+│       ├── main.py             # FastAPI app + CORS middleware
+│       ├── api/
+│       │   ├── auth.py         # /api/auth — profile sync
+│       │   ├── faqs.py         # /api/faqs — list + semantic search
+│       │   ├── ai.py           # /api/ai/ask — RAG pipeline
+│       │   ├── discussions.py  # /api/threads — CRUD + voting
+│       │   ├── escalations.py  # /api/escalations — queue management
+│       │   └── analytics.py    # /api/analytics — stats
+│       ├── core/
+│       │   ├── config.py       # Pydantic settings (reads .env)
+│       │   ├── database.py     # Supabase REST helpers (get/post/patch/delete/rpc)
+│       │   └── security.py     # JWT validation + role guards
+│       ├── models/
+│       │   ├── user.py         # UserProfile schema
+│       │   ├── faq.py          # FAQ schema
+│       │   └── thread.py       # Thread, Reply, Vote schemas
+│       └── services/
+│           ├── embedding_service.py  # Gemini embedding-001 wrapper (with retry)
+│           └── rag_service.py        # Full RAG pipeline + local fallback
+│
+├── frontend/
+│   ├── .env.example            # Template for NEXT_PUBLIC_* vars
+│   ├── next.config.mjs
+│   ├── tailwind.config.ts
+│   └── src/
+│       ├── app/
+│       │   ├── page.tsx            # Home / Ask AI (flip card UI)
+│       │   ├── faq/page.tsx        # Smart FAQ browser
+│       │   ├── community/
+│       │   │   ├── page.tsx        # Thread list + create
+│       │   │   ├── [id]/page.tsx   # Thread detail + replies
+│       │   │   ├── store.ts        # localStorage thread store
+│       │   │   └── types.ts        # ForumView, ForumTopic types
+│       │   ├── admin/page.tsx      # Admin dashboard
+│       │   └── ask-ai/page.tsx     # Redirect → /
+│       ├── components/
+│       │   ├── navbar.tsx
+│       │   └── route-aware-shell.tsx
+│       ├── data/
+│       │   └── campus-faq.ts       # Static FAQ data + topic config
+│       ├── lib/
+│       │   ├── supabase.ts         # Supabase client
+│       │   └── tldr.ts             # AI TLDR generator for FAQ cards
+│       └── services/
+│           └── api.ts              # All backend API calls
+│
+├── faq.json                    # Source FAQ dataset (91k — used by ingest script)
+├── tldr.json                   # Pre-generated TLDR summaries
+└── backend/scripts/
+    ├── ingest_faqs.py          # One-time FAQ ingestion → Supabase + embeddings
+    └── test_rag.py             # Manual RAG pipeline smoke test
+```
 
 ---
 
-## AI / RAG PIPELINE
+## Local setup guide
 
-Build:
+### Prerequisites
 
-1. Embedding pipeline
-2. Semantic retrieval
-3. Similarity scoring
-4. Confidence routing
-5. RAG answer generation
-6. Duplicate detection
-7. FAQ auto-suggestion pipeline
+| Tool | Version | Install |
+|------|---------|---------|
+| Python | 3.11+ | [python.org](https://python.org) |
+| Node.js | 18+ | [nodejs.org](https://nodejs.org) |
+| Git | any | [git-scm.com](https://git-scm.com) |
 
-The AI should:
-
-* retrieve context first
-* answer ONLY from verified knowledge
-* cite source thread/FAQ
-* avoid hallucinations
-
-Use:
-
-* cosine similarity
-* hybrid search if possible
-* metadata filtering
+You also need accounts for:
+- [Supabase](https://supabase.com) — free tier is enough
+- [Google AI Studio](https://aistudio.google.com) — for Gemini API key (free quota)
 
 ---
 
-## JSON FAQ INGESTION
+### 1. Clone the repo
 
-I already have a JSON FAQ dataset.
-
-Build:
-
-* FAQ ingestion script
-* embedding generation pipeline
-* Supabase vector storage
-* automatic category mapping
-
-The ingestion should:
-
-* clean text
-* generate embeddings
-* insert into PostgreSQL
-* store vectors in pgvector
+```bash
+git clone https://github.com/your-org/samagama-faq.git
+cd samagama-faq
+```
 
 ---
 
-## COMMUNITY TRUST SYSTEM
+### 2. Set up Supabase
 
-Build a reputation system.
-
-Users gain points for:
-
-* accepted answers
-* upvotes
-* verified responses
-
-Roles:
-
-* Student
-* Trusted Contributor
-* Mentor
-* Admin
-
-ONLY:
-
-* mentor-approved answers
-* admin-approved answers
-
-can enter official knowledge base.
+1. Create a new Supabase project at [app.supabase.com](https://app.supabase.com)
+2. Go to **Project Settings → API** and copy:
+   - `Project URL` → `SUPABASE_URL`
+   - `anon public` key → `SUPABASE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Enable the **pgvector** extension:
+   ```sql
+   -- Run in Supabase SQL Editor
+   create extension if not exists vector;
+   ```
+4. Run the database schema (ask the project maintainer for the full schema SQL, or check the project wiki).
 
 ---
 
-## ESCALATION SYSTEM
+### 3. Get a Gemini API key
 
-Escalation should be LAST RESORT.
+1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Create an API key — paste it as `GEMINI_API_KEY`
 
-Escalation triggers:
-
-* low confidence
-* unresolved thread
-* no community response
-* repeated failed answers
-
-Escalated questions:
-
-* enter admin queue
-* get priority scoring
-* become FAQ suggestions later
+> **No Gemini key?** The app still works. Semantic search falls back to difflib string matching and the AI answer falls back to extracting the first FAQ answer from context. You just won't get vector search or AI-generated answers.
 
 ---
 
-## API DESIGN
+### 4. Backend
 
-Generate REST API structure for:
+```bash
+cd backend
 
-* auth
-* FAQ retrieval
-* semantic search
-* AI answers
-* discussions
-* replies
-* voting
-* moderation
-* escalation
-* analytics
+# Copy and fill in environment variables
+cp .env.example .env
+# Edit .env with your Supabase URL, key, and Gemini API key
 
-Use:
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
 
-* FastAPI routers
-* service layer
-* repository pattern
+# Install dependencies
+pip install -r requirements.txt
 
----
+# Run the server
+uvicorn app.main:app --reload --port 8000
+```
 
-## FOLDER STRUCTURE
-
-Generate:
-
-* frontend folder structure
-* backend folder structure
-* API architecture
-* reusable component structure
-* hooks/services organization
+The API will be live at `http://localhost:8000`.
+Interactive docs: `http://localhost:8000/docs`
 
 ---
 
-## UI/UX REQUIREMENTS
+### 5. Ingest the FAQ dataset
 
-Design style:
+Run this once to load `faq.json` into Supabase and generate embeddings:
 
-* modern
-* minimal
-* fast
-* clean
-* Discord + StackOverflow + Linear inspired
+```bash
+# Still inside the backend/ directory with venv active
+python scripts/ingest_faqs.py
+```
 
-Use:
+This will:
+- Parse `faq.json`
+- Insert FAQ records into `faqs` table
+- Generate 768-dim Gemini embeddings for each question+answer
+- Store them in `faq_embeddings` (pgvector)
 
-* dark mode support
-* responsive layout
-* sticky sidebar
-* category chips
-* thread cards
-* clean typography
+> Tip: If you hit Gemini rate limits, the script has built-in retry + sleep. Let it run.
 
 ---
 
-## ANALYTICS
+### 6. Frontend
 
-Track:
+```bash
+cd frontend
 
-* most searched questions
-* failed searches
-* escalation rates
-* duplicate question frequency
-* community response time
-* unanswered questions
-* helpfulness score
-* AI confidence metrics
+# Copy and fill in environment variables
+cp .env.example .env.local
+# Edit .env.local — set NEXT_PUBLIC_API_URL, SUPABASE_URL, and SUPABASE_ANON_KEY
 
----
+# Install dependencies
+npm install
 
-## SECURITY
+# Start the dev server
+npm run dev
+```
 
-Implement:
-
-* row-level security
-* JWT auth
-* rate limiting
-* spam prevention
-* XSS prevention
-* SQL injection prevention
-* moderation controls
+The app will be live at `http://localhost:3000`.
 
 ---
 
-## MVP PRIORITY (VERY IMPORTANT)
+### 7. Verify everything works
 
-Build ONLY in this order:
-
-PHASE 1:
-
-* FAQ ingestion
-* semantic search
-* vector retrieval
-
-PHASE 2:
-
-* AI RAG answers
-* confidence routing
-* related questions
-
-PHASE 3:
-
-* community threads
-* replies
-* voting
-
-PHASE 4:
-
-* moderation
-* escalation dashboard
-
-PHASE 5:
-
-* analytics
-* FAQ auto-generation
-
-DO NOT skip phases.
+1. Open `http://localhost:3000` — you should see the Ask AI card
+2. Type a question and hit **Ask AI** — it should call the backend and return results
+3. Open `http://localhost:3000/faq` — FAQ cards should load
+4. Check backend logs (`uvicorn` terminal) for any errors
 
 ---
 
-## IMPORTANT FINAL RULES
+## Deployment
 
-1. Keep architecture production-grade.
-2. Keep implementation MVP-focused.
-3. Avoid unnecessary complexity.
-4. Prioritize maintainability.
-5. Generate scalable clean code.
-6. Think like a senior engineer.
-7. Think long-term scalability.
-8. Use modular reusable design.
-9. Focus on retrieval quality.
-10. Build with real users in mind.
+### Frontend → Vercel
 
-Now:
+```bash
+# Push to GitHub, then connect the repo in Vercel
+# Set these environment variables in Vercel Project Settings:
+NEXT_PUBLIC_API_URL=https://your-backend.railway.app/api
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-1. Generate the complete architecture
-2. Generate the database schema
-3. Generate folder structure
-4. Generate implementation roadmap
-5. Generate API routes
-6. Generate backend architecture
-7. Generate frontend architecture
-8. Generate RAG pipeline
-9. Generate ingestion pipeline
-10. Generate deployment plan
-11. Generate MVP sprint plan
-12. Generate code structure step-by-step
+### Backend → Railway / Render
 
-Then begin implementation phase-by-phase.
+**Railway:**
+1. Create new project → Deploy from GitHub repo
+2. Set root directory to `backend/`
+3. Set start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. Add all environment variables from `.env`
+
+**Render:**
+1. New Web Service → connect GitHub repo
+2. Root directory: `backend`
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+> After deploying the backend, update `NEXT_PUBLIC_API_URL` in Vercel to point to the production URL.
+
+---
+
+## Environment variables reference
+
+### Backend (`backend/.env`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_URL` | ✅ | Your Supabase project URL |
+| `SUPABASE_KEY` | ✅ | Supabase anon key (service key for admin scripts) |
+| `GEMINI_API_KEY` | ⚠️ | Gemini API key. Falls back to string matching if blank |
+| `PORT` | ❌ | Server port (default: `8000`) |
+
+### Frontend (`frontend/.env.local`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | ✅ | Backend API base URL, e.g. `http://localhost:8000/api` |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon key |
+
+---
+
+## API reference
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/faqs` | Public | List FAQs (optional `?category=slug`) |
+| `GET` | `/api/faqs/categories` | Public | List all categories |
+| `GET` | `/api/faqs/search?q=...` | Public | Semantic search FAQs |
+| `POST` | `/api/ai/ask` | Optional | RAG AI answer |
+| `GET` | `/api/threads` | Public | List threads |
+| `POST` | `/api/threads` | 🔐 Auth | Create thread |
+| `GET` | `/api/threads/:id` | Public | Get thread + replies |
+| `POST` | `/api/threads/:id/replies` | 🔐 Auth | Reply to thread |
+| `POST` | `/api/threads/vote` | 🔐 Auth | Upvote/downvote |
+| `POST` | `/api/threads/:id/accept-reply` | 🔐 Auth | Accept reply |
+| `GET` | `/api/escalations` | 🛡️ Mentor+ | List escalation queue |
+| `POST` | `/api/escalations` | 🔐 Auth | Escalate a thread |
+| `POST` | `/api/escalations/:id/resolve` | 🛡️ Mentor+ | Resolve / convert to FAQ |
+| `GET` | `/api/analytics` | 🛡️ Mentor+ | Platform analytics |
+| `GET` | `/api/auth/profile` | 🔐 Auth | Current user profile |
+
+Full interactive docs available at `/docs` when the backend is running.
+
+---
+
+## Known limitations / roadmap
+
+- **Community page** currently uses `localStorage` as its data store — threads don't sync across devices or users. Migrating to the backend `/api/threads` endpoints is the next planned work item.
+- **Auth** is Supabase-based but the frontend doesn't yet expose a login/logout UI — users are currently treated as anonymous guests (read-only) unless you implement the auth flow.
+- **pgvector RPC functions** (`match_faqs`, `match_threads`) must be created in Supabase before vector search works — see the schema SQL in the project wiki.
+- **Rate limiting** is not yet implemented on the backend. Add it before exposing the API publicly.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+Built with ❤️ for the Vicharanashala Internship · IIT Ropar
+</div>

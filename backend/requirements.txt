@@ -1,7 +1,8 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 pydantic-settings
 requests
 python-dotenv
 pyjwt
+httpx

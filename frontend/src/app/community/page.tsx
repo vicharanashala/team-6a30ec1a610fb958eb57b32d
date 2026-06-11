@@ -76,12 +76,16 @@ export default function CommunityPage() {
       const q = searchQuery.toLowerCase();
       result = result.filter((t) => t.title.toLowerCase().includes(q) || t.content.toLowerCase().includes(q));
     }
-    result = result.sort((a, b) => {
+    // Apply sort based on activeView so the view toggle buttons actually work
+    result = [...result].sort((a, b) => {
       if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+      if (activeView === "votes") return ((b as any).upvotes ?? 0) - ((a as any).upvotes ?? 0);
+      if (activeView === "top") return (b.viewCount ?? 0) - (a.viewCount ?? 0);
+      // latest / new / everything else => most recent first
       return b.createdAt - a.createdAt;
     });
     return result;
-  }, [threads, activeCategory, searchQuery]);
+  }, [threads, activeCategory, searchQuery, activeView]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
