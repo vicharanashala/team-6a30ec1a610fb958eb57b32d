@@ -196,8 +196,8 @@ You also need accounts for:
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/Bhavya-jain07/samagama-faq.git
-cd samagama-faq
+git clone  https://github.com/vicharanashala/team-6a30ec1a610fb958eb57b32d.git
+cd team-6a30ec1a610fb958eb57b32d.git
 ```
 
 ---
